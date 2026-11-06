@@ -1,0 +1,781 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TARS Simulator — Interstellar</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box
+        }
+
+        body {
+            overflow: hidden;
+            background: #000;
+            font-family: 'Courier New', monospace
+        }
+
+        canvas {
+            display: block
+        }
+
+        #overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, .88);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+            cursor: pointer;
+            flex-direction: column
+        }
+
+        #overlay h1 {
+            color: #c0c8d0;
+            font-size: 42px;
+            letter-spacing: 12px;
+            margin-bottom: 12px;
+            font-weight: 400
+        }
+
+        #overlay h2 {
+            color: #5a7a9a;
+            font-size: 14px;
+            letter-spacing: 6px;
+            margin-bottom: 40px;
+            font-weight: 400
+        }
+
+        #overlay p {
+            color: #667;
+            font-size: 13px;
+            line-height: 2
+        }
+
+        #overlay .key {
+            color: #8ab4d8;
+            background: #1a2a3a;
+            padding: 2px 8px;
+            border-radius: 3px;
+            font-size: 12px
+        }
+
+        #crosshair {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: rgba(255, 255, 255, .35);
+            font-size: 24px;
+            z-index: 50;
+            pointer-events: none;
+            display: none
+        }
+
+        #hud {
+            position: fixed;
+            bottom: 16px;
+            left: 16px;
+            color: #4a6a7a;
+            font-size: 11px;
+            z-index: 50;
+            pointer-events: none;
+            display: none;
+            line-height: 1.8
+        }
+
+        #zoomBar {
+            position: fixed;
+            right: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 4px;
+            height: 120px;
+            background: rgba(255, 255, 255, .08);
+            border-radius: 2px;
+            z-index: 50;
+            display: none
+        }
+
+        #zoomFill {
+            width: 100%;
+            background: rgba(120, 180, 220, .4);
+            border-radius: 2px;
+            position: absolute;
+            bottom: 0;
+            transition: height .15s
+        }
+    </style>
+</head>
+
+<body>
+    <div id="overlay">
+        <h1>T A R S</h1>
+        <h2>MOTION SIMULATOR</h2>
+        <p><span class="key">CLICK</span> to enter the environment</p>
+        <p><span class="key">W</span><span class="key">A</span><span class="key">S</span><span class="key">D</span> Move
+            &nbsp;|&nbsp; <span class="key">MOUSE</span> Look &nbsp;|&nbsp; <span class="key">SCROLL</span> Zoom
+            &nbsp;|&nbsp; <span class="key">ESC</span> Release</p>
+    </div>
+    <div id="crosshair">+</div>
+    <div id="hud"></div>
+    <div id="zoomBar">
+        <div id="zoomFill" style="height:50%"></div>
+    </div>
+
+    <script type="importmap">
+{"imports":{
+  "three":"https://cdn.jsdelivr.net/npm/three@0.163.0/build/three.module.js",
+  "three/addons/":"https://cdn.jsdelivr.net/npm/three@0.163.0/examples/jsm/"
+}}
+</script>
+    <script type="module">
+        import *as THREE from 'three';
+        import { PointerLockControls } from 'three/addons/controls/PointerLockControls.js';
+
+        /* ============================================================
+           GLOBALS
+           ============================================================ */
+        let scene, camera, renderer, controls, clock;
+        let tars, tarsAI;
+        const keys = { w: false, a: false, s: false, d: false };
+        const ROOM = 40, WALL_H = 8;
+        const moveSpeed = 5.5;
+
+        // Per-leg phase offsets. Order: [outerL, innerL, outerR, innerR]
+        // Every gait here keeps all four legs actuated every cycle.
+        const GAITS = {
+            compass: [0.00, 0.06, 0.50, 0.56],
+            trot: [0.00, 0.50, 0.50, 0.00],
+            pace: [0.00, 0.50, 0.00, 0.50],
+            bound: [0.00, 0.00, 0.50, 0.50]
+        };
+
+        /* ============================================================
+           INIT
+           ============================================================ */
+        function init() {
+            clock = new THREE.Clock();
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x0a0c10);
+            scene.fog = new THREE.FogExp2(0x0a0c10, 0.018);
+
+            camera = new THREE.PerspectiveCamera(65, innerWidth / innerHeight, 0.1, 200);
+            camera.position.set(8, 1.7, 10);
+
+            renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
+            renderer.setSize(innerWidth, innerHeight);
+            renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+            renderer.shadowMap.enabled = true;
+            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+            renderer.toneMapping = THREE.ACESFilmicToneMapping;
+            renderer.toneMappingExposure = 1.25;
+            document.body.appendChild(renderer.domElement);
+
+            controls = new PointerLockControls(camera, document.body);
+            setupControls();
+            buildRoom();
+            buildTARS();
+            setupLights();
+
+            window.addEventListener('resize', () => {
+                camera.aspect = innerWidth / innerHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(innerWidth, innerHeight);
+            });
+            animate();
+        }
+
+        /* ============================================================
+           CONTROLS
+           ============================================================ */
+        function setupControls() {
+            const overlay = document.getElementById('overlay');
+            overlay.addEventListener('click', () => controls.lock());
+            controls.addEventListener('lock', () => {
+                overlay.style.display = 'none';
+                document.getElementById('crosshair').style.display = 'block';
+                document.getElementById('hud').style.display = 'block';
+                document.getElementById('zoomBar').style.display = 'block';
+            });
+            controls.addEventListener('unlock', () => {
+                overlay.style.display = 'flex';
+                document.getElementById('crosshair').style.display = 'none';
+                document.getElementById('hud').style.display = 'none';
+                document.getElementById('zoomBar').style.display = 'none';
+            });
+            document.addEventListener('keydown', e => {
+                const k = e.key.toLowerCase();
+                if (k in keys) keys[k] = true;
+                if (k === 'g' && tars) {
+                    const list = Object.keys(GAITS);
+                    const idx = list.indexOf(tars.gait);
+                    tars.gait = list[(idx + 1) % list.length];
+                }
+            });
+            document.addEventListener('keyup', e => {
+                const k = e.key.toLowerCase();
+                if (k in keys) keys[k] = false;
+            });
+            document.addEventListener('wheel', e => {
+                camera.fov = THREE.MathUtils.clamp(camera.fov + e.deltaY * 0.05, 28, 88);
+                camera.updateProjectionMatrix();
+                const pct = ((88 - camera.fov) / 60) * 100;
+                document.getElementById('zoomFill').style.height = pct + '%';
+            }, { passive: true });
+        }
+
+        /* ============================================================
+           ROOM
+           ============================================================ */
+        function buildRoom() {
+            // --- Floor ---
+            const floorCanvas = document.createElement('canvas');
+            floorCanvas.width = 512; floorCanvas.height = 512;
+            const fctx = floorCanvas.getContext('2d');
+            fctx.fillStyle = '#1e2024'; fctx.fillRect(0, 0, 512, 512);
+            fctx.strokeStyle = '#282c30'; fctx.lineWidth = 1;
+            for (let i = 0; i <= 512; i += 32) {
+                fctx.beginPath(); fctx.moveTo(i, 0); fctx.lineTo(i, 512); fctx.stroke();
+                fctx.beginPath(); fctx.moveTo(0, i); fctx.lineTo(512, i); fctx.stroke();
+            }
+            fctx.strokeStyle = '#303438'; fctx.lineWidth = 2;
+            for (let i = 0; i <= 512; i += 128) {
+                fctx.beginPath(); fctx.moveTo(i, 0); fctx.lineTo(i, 512); fctx.stroke();
+                fctx.beginPath(); fctx.moveTo(0, i); fctx.lineTo(512, i); fctx.stroke();
+            }
+            const floorTex = new THREE.CanvasTexture(floorCanvas);
+            floorTex.wrapS = floorTex.wrapT = THREE.RepeatWrapping;
+            floorTex.repeat.set(10, 10);
+            const floorMat = new THREE.MeshStandardMaterial({ map: floorTex, roughness: 0.85, metalness: 0.15, color: 0x888888 });
+            const floor = new THREE.Mesh(new THREE.PlaneGeometry(ROOM, ROOM), floorMat);
+            floor.rotation.x = -Math.PI / 2; floor.receiveShadow = true;
+            scene.add(floor);
+
+            // --- Walls ---
+            const wallMat = new THREE.MeshStandardMaterial({ color: 0x2a2e34, roughness: 0.8, metalness: 0.1 });
+            const wallGeo = new THREE.PlaneGeometry(ROOM, WALL_H);
+            const wallData = [
+                { p: [0, WALL_H / 2, -ROOM / 2], r: [0, 0, 0] },
+                { p: [0, WALL_H / 2, ROOM / 2], r: [0, Math.PI, 0] },
+                { p: [-ROOM / 2, WALL_H / 2, 0], r: [0, Math.PI / 2, 0] },
+                { p: [ROOM / 2, WALL_H / 2, 0], r: [0, -Math.PI / 2, 0] }
+            ];
+            wallData.forEach(w => {
+                const m = new THREE.Mesh(wallGeo, wallMat);
+                m.position.set(...w.p); m.rotation.set(...w.r); m.receiveShadow = true;
+                scene.add(m);
+            });
+
+            // Wall panel lines
+            const lineMat = new THREE.MeshStandardMaterial({ color: 0x1a1e22, roughness: 0.9, metalness: 0.1 });
+            wallData.forEach(w => {
+                for (let i = 1; i < 4; i++) {
+                    const lg = new THREE.BoxGeometry(ROOM, 0.02, 0.02);
+                    const lm = new THREE.Mesh(lg, lineMat);
+                    const yy = i * 2;
+                    lm.position.set(w.p[0], yy, w.p[2]);
+                    lm.rotation.set(...w.r);
+                    scene.add(lm);
+                }
+            });
+
+            // --- Ceiling ---
+            const ceilMat = new THREE.MeshStandardMaterial({ color: 0x1a1c20, roughness: 0.9, metalness: 0.05 });
+            const ceil = new THREE.Mesh(new THREE.PlaneGeometry(ROOM, ROOM), ceilMat);
+            ceil.rotation.x = Math.PI / 2; ceil.position.y = WALL_H;
+            scene.add(ceil);
+
+            // --- Columns ---
+            const colMat = new THREE.MeshStandardMaterial({ color: 0x35383e, roughness: 0.6, metalness: 0.3 });
+            const colGeo = new THREE.BoxGeometry(0.6, WALL_H, 0.6);
+            const colPos = [[-12, -12], [-12, 12], [12, -12], [12, 12], [0, -14], [0, 14], [-14, 0], [14, 0]];
+            colPos.forEach(([x, z]) => {
+                const c = new THREE.Mesh(colGeo, colMat);
+                c.position.set(x, WALL_H / 2, z); c.castShadow = true; c.receiveShadow = true;
+                scene.add(c);
+            });
+
+            // --- Crates ---
+            const crateMat = new THREE.MeshStandardMaterial({ color: 0x3a3530, roughness: 0.85, metalness: 0.1 });
+            const crateData = [
+                { s: [1.2, 0.8, 1.0], p: [-6, 0.4, -8] },
+                { s: [0.8, 0.6, 0.8], p: [-5.2, 0.3, -7.2] },
+                { s: [1.5, 1.0, 1.2], p: [10, 0.5, 6] },
+                { s: [0.6, 1.2, 0.6], p: [11.2, 0.6, 5.2] },
+                { s: [2.0, 0.5, 1.0], p: [-8, 0.25, 10] },
+                { s: [1.0, 0.7, 1.0], p: [7, 0.35, -10] },
+            ];
+            crateData.forEach(c => {
+                const m = new THREE.Mesh(new THREE.BoxGeometry(...c.s), crateMat);
+                m.position.set(...c.p); m.castShadow = true; m.receiveShadow = true;
+                scene.add(m);
+            });
+
+            // --- Ceiling light panels ---
+            const lightPanelMat = new THREE.MeshStandardMaterial({
+                color: 0x111111, emissive: 0xdde4f0, emissiveIntensity: 1.2, roughness: 0.3
+            });
+            const lpGeo = new THREE.BoxGeometry(3, 0.05, 1.2);
+            [[-6, WALL_H - 0.03, -6], [6, WALL_H - 0.03, -6], [-6, WALL_H - 0.03, 6], [6, WALL_H - 0.03, 6], [0, WALL_H - 0.03, 0]].forEach(p => {
+                const lp = new THREE.Mesh(lpGeo, lightPanelMat);
+                lp.position.set(...p); scene.add(lp);
+            });
+        }
+
+        /* ============================================================
+           LIGHTS
+           ============================================================ */
+        function setupLights() {
+            // Ambient — flat fill so nothing is pure black
+            const amb = new THREE.AmbientLight(0x4a5468, 1.1);
+            scene.add(amb);
+
+            // Hemisphere — cool from above, warm bounce from floor
+            const hemi = new THREE.HemisphereLight(0x8898b8, 0x2a2018, 0.9);
+            scene.add(hemi);
+
+            // Key directional (shadow caster)
+            const dir = new THREE.DirectionalLight(0xffffff, 2.6);
+            dir.position.set(8, 14, 6);
+            dir.castShadow = true;
+            dir.shadow.mapSize.set(2048, 2048);
+            dir.shadow.camera.left = -20; dir.shadow.camera.right = 20;
+            dir.shadow.camera.top = 20; dir.shadow.camera.bottom = -20;
+            dir.shadow.camera.near = 0.5; dir.shadow.camera.far = 50;
+            dir.shadow.bias = -0.0004;
+            dir.shadow.normalBias = 0.02;
+            scene.add(dir);
+
+            // Fill directional from opposite side (no shadow — pure bounce feel)
+            const fill = new THREE.DirectionalLight(0xa8c0e0, 1.2);
+            fill.position.set(-10, 8, -8);
+            scene.add(fill);
+
+            // Ceiling point lights aligned with the emissive panels.
+            // Modern three.js (r155+) uses physical units, so intensity ~40-45 here.
+            const pts = [
+                [0, 7, 0, 45],
+                [-6, 7, -6, 30], [6, 7, -6, 30], [-6, 7, 6, 30], [6, 7, 6, 30],
+                [0, 7, -12, 22], [0, 7, 12, 22], [-12, 7, 0, 22], [12, 7, 0, 22]
+            ];
+            pts.forEach(([x, y, z, int]) => {
+                const pl = new THREE.PointLight(0xffffff, int, 30, 1.6);
+                pl.position.set(x, y, z);
+                scene.add(pl);
+            });
+        }
+
+        /* ============================================================
+           TARS MODEL
+           ============================================================ */
+        function buildTARS() {
+            const root = new THREE.Group();
+            root.position.set(0, 0, 0);
+
+            // Materials
+            const mainMat = new THREE.MeshStandardMaterial({ color: 0x4a4e54, metalness: 0.82, roughness: 0.32 });
+            const darkMat = new THREE.MeshStandardMaterial({ color: 0x282c30, metalness: 0.7, roughness: 0.5 });
+            const pivotMat = new THREE.MeshStandardMaterial({ color: 0x5c6068, metalness: 0.9, roughness: 0.22 });
+            const accentMat = new THREE.MeshStandardMaterial({ color: 0x3e4248, metalness: 0.85, roughness: 0.28 });
+            const displayMat = new THREE.MeshStandardMaterial({
+                color: 0x001a0a, emissive: 0x22ffaa, emissiveIntensity: 0.6, roughness: 0.2, metalness: 0.3
+            });
+            const indicatorMat = new THREE.MeshStandardMaterial({
+                color: 0x1a0a00, emissive: 0xff6622, emissiveIntensity: 0.4, roughness: 0.3
+            });
+
+            // Dimensions
+            const BW = 0.19, BD = 0.40, UH = 0.80, LH = 0.80;
+            const PIVOT_Y = 0.825;
+            const barX = [-0.30, -0.10, 0.10, 0.30];
+
+            const bodyGroup = new THREE.Group();
+            const bars = [];
+
+            for (let i = 0; i < 4; i++) {
+                const barGroup = new THREE.Group();
+                barGroup.position.x = barX[i];
+
+                const pivot = new THREE.Group();
+                pivot.position.y = PIVOT_Y;
+
+                // Upper segment
+                const uGeo = new THREE.BoxGeometry(BW, UH, BD);
+                const uMesh = new THREE.Mesh(uGeo, mainMat);
+                uMesh.position.y = UH / 2 + 0.015;
+                uMesh.castShadow = true; uMesh.receiveShadow = true;
+                pivot.add(uMesh);
+
+                // Lower segment
+                const lGeo = new THREE.BoxGeometry(BW, LH, BD);
+                const lMesh = new THREE.Mesh(lGeo, mainMat);
+                lMesh.position.y = -(LH / 2 + 0.015);
+                lMesh.castShadow = true; lMesh.receiveShadow = true;
+                pivot.add(lMesh);
+
+                // Upper cap
+                const ucGeo = new THREE.BoxGeometry(BW + 0.006, 0.025, BD + 0.006);
+                const ucMesh = new THREE.Mesh(ucGeo, accentMat);
+                ucMesh.position.y = UH + 0.015;
+                pivot.add(ucMesh);
+
+                // Lower foot on a prismatic slider (telescopic shank)
+                const slider = new THREE.Group();
+                slider.position.y = -(LH + 0.015);
+                const lfGeo = new THREE.BoxGeometry(BW + 0.008, 0.02, BD + 0.008);
+                const lfMesh = new THREE.Mesh(lfGeo, accentMat);
+                slider.add(lfMesh);
+                // Telescoping inner tube — emerges from lower leg when slider extends
+                const tubeGeo = new THREE.BoxGeometry(BW * 0.55, 0.07, BD * 0.55);
+                const tubeMesh = new THREE.Mesh(tubeGeo, darkMat);
+                tubeMesh.position.y = 0.04;
+                slider.add(tubeMesh);
+                pivot.add(slider);
+
+                // Panel grooves - upper
+                for (let j = 0; j < 4; j++) {
+                    const gGeo = new THREE.BoxGeometry(BW + 0.004, 0.006, BD + 0.004);
+                    const gMesh = new THREE.Mesh(gGeo, darkMat);
+                    gMesh.position.y = 0.12 + j * 0.17;
+                    pivot.add(gMesh);
+                }
+                // Panel grooves - lower
+                for (let j = 0; j < 4; j++) {
+                    const gGeo = new THREE.BoxGeometry(BW + 0.004, 0.006, BD + 0.004);
+                    const gMesh = new THREE.Mesh(gGeo, darkMat);
+                    gMesh.position.y = -(0.12 + j * 0.17);
+                    pivot.add(gMesh);
+                }
+
+                // Front face detail strips
+                const stripGeo = new THREE.BoxGeometry(0.005, UH * 0.7, 0.005);
+                [-1, 1].forEach(side => {
+                    const strip = new THREE.Mesh(stripGeo, darkMat);
+                    strip.position.set(side * (BW / 2 - 0.015), UH / 2 + 0.015, BD / 2 + 0.003);
+                    pivot.add(strip);
+                    const strip2 = strip.clone();
+                    strip2.position.y = -(LH / 2 + 0.015);
+                    pivot.add(strip2);
+                });
+
+                // Middle pivot housing (cylinder spanning the bar depth)
+                const phGeo = new THREE.CylinderGeometry(0.028, 0.028, BD + 0.06, 12);
+                const phMesh = new THREE.Mesh(phGeo, pivotMat);
+                phMesh.rotation.x = Math.PI / 2;
+                phMesh.castShadow = true;
+                pivot.add(phMesh);
+
+                // Upper pivot indicator
+                const upGeo = new THREE.CylinderGeometry(0.018, 0.018, BD + 0.03, 8);
+                const upMesh = new THREE.Mesh(upGeo, pivotMat);
+                upMesh.rotation.x = Math.PI / 2;
+                upMesh.position.y = UH * 0.82;
+                pivot.add(upMesh);
+
+                // Lower pivot indicator
+                const lpGeo2 = new THREE.CylinderGeometry(0.018, 0.018, BD + 0.03, 8);
+                const lpMesh = new THREE.Mesh(lpGeo2, pivotMat);
+                lpMesh.rotation.x = Math.PI / 2;
+                lpMesh.position.y = -LH * 0.82;
+                pivot.add(lpMesh);
+
+                // Display screen on bar 1
+                if (i === 1) {
+                    const scrGeo = new THREE.BoxGeometry(0.09, 0.055, 0.006);
+                    const scrMesh = new THREE.Mesh(scrGeo, displayMat);
+                    scrMesh.position.set(0, 0.35, BD / 2 + 0.004);
+                    pivot.add(scrMesh);
+                    // Screen border
+                    const brdGeo = new THREE.BoxGeometry(0.10, 0.065, 0.003);
+                    const brdMesh = new THREE.Mesh(brdGeo, darkMat);
+                    brdMesh.position.set(0, 0.35, BD / 2 + 0.001);
+                    pivot.add(brdMesh);
+                }
+
+                // Indicator light on bar 2
+                if (i === 2) {
+                    const indGeo = new THREE.BoxGeometry(0.015, 0.015, 0.006);
+                    const indMesh = new THREE.Mesh(indGeo, indicatorMat);
+                    indMesh.position.set(0.04, 0.55, BD / 2 + 0.004);
+                    pivot.add(indMesh);
+                }
+
+                barGroup.add(pivot);
+                bodyGroup.add(barGroup);
+                bars.push({ group: barGroup, pivot, slider, baseX: barX[i], upperMesh: uMesh, lowerMesh: lMesh });
+            }
+
+            // Cross-brace at top (visual connector between bars)
+            const braceGeo = new THREE.BoxGeometry(0.82, 0.03, BD * 0.6);
+            const braceMesh = new THREE.Mesh(braceGeo, accentMat);
+            braceMesh.position.y = PIVOT_Y + UH * 0.82;
+            braceMesh.castShadow = true;
+            bodyGroup.add(braceMesh);
+
+            // Cross-brace at bottom
+            const brace2 = new THREE.Mesh(braceGeo.clone(), accentMat);
+            brace2.position.y = PIVOT_Y - LH * 0.82;
+            brace2.castShadow = true;
+            bodyGroup.add(brace2);
+
+            root.add(bodyGroup);
+            scene.add(root);
+
+            tars = {
+                root, bodyGroup, bars, displayMat, indicatorMat,
+                state: 'IDLE',
+                gait: 'compass',
+                walkPhase: 0,
+                walkSpeed: 1.2,
+                stepPeriod: 1.6,
+                position: new THREE.Vector3(0, 0, 0),
+                rotation: 0,
+                targetPos: new THREE.Vector3(5, 0, -3),
+                idleTimer: 2,
+                turnSpeed: 1.8
+            };
+        }
+
+        /* ============================================================
+           TARS ANIMATION
+           ============================================================ */
+        function mechSin(phase) {
+            const s = Math.sin(2 * Math.PI * phase);
+            return Math.sign(s) * Math.pow(Math.abs(s), 0.72);
+        }
+
+        function quintic(u) {
+            u = THREE.MathUtils.clamp(u, 0, 1);
+            return 10 * u * u * u - 15 * u * u * u * u + 6 * u * u * u * u * u;
+        }
+
+        function updateTARSAnimation(dt) {
+            if (!tars) return;
+            const { state, bars, bodyGroup, displayMat, indicatorMat } = tars;
+            const t = clock.getElapsedTime();
+
+            // Display pulse
+            displayMat.emissiveIntensity = 0.4 + 0.25 * Math.sin(t * 2.5) + 0.1 * Math.sin(t * 7.3);
+            indicatorMat.emissiveIntensity = 0.3 + 0.15 * Math.sin(t * 1.8);
+
+            if (state === 'WALKING') {
+                const swingMax = 0.52;
+                const splayMax = 0.09;
+                const bodyLean = 0.07;
+                const bodyRock = 0.03;
+                const vertBob = 0.018;
+                const extMax = 0.015;
+
+                const offsets = GAITS[tars.gait] || GAITS.compass;
+
+                for (let i = 0; i < 4; i++) {
+                    // Per-leg phase from the gait table — four distinct trajectories
+                    const bp = (tars.walkPhase + offsets[i]) % 1;
+                    const swing = swingMax * mechSin(bp);
+
+                    bars[i].pivot.rotation.x = swing;
+
+                    // Per-leg splay: outer legs open on stance, inner legs close on swing
+                    const isLeft = i < 2;
+                    const isOuter = (i === 0 || i === 3);
+                    const dir = isLeft ? -1 : 1;
+                    const splayAmp = isOuter ? splayMax : splayMax * 0.35;
+                    const splayPhase = isOuter ? ((bp + 0.5) % 1) : bp;
+                    const splay = splayAmp * Math.abs(mechSin(splayPhase));
+
+                    bars[i].group.rotation.y = dir * splay;
+                    bars[i].group.position.x = bars[i].baseX + dir * splay * 0.35;
+
+                    // Swing clearance
+                    const lift = Math.max(0, mechSin(bp)) * vertBob;
+                    bars[i].pivot.position.y = 0.825 + lift;
+
+                    // Prismatic extension: stance leg extends to raise CoM
+                    const stance = Math.max(0, -Math.sin(2 * Math.PI * bp));
+                    bars[i].slider.position.y = -(0.815 + extMax * stance);
+                }
+
+                bodyGroup.rotation.x = bodyLean + 0.015 * Math.sin(tars.walkPhase * Math.PI * 2);
+                bodyGroup.rotation.z = bodyRock * mechSin(tars.walkPhase);
+                bodyGroup.position.y = vertBob * 0.5 * Math.abs(mechSin(tars.walkPhase * 2));
+            } else if (state === 'TURNING') {
+                // Compact pose, slight lean into turn
+                for (let i = 0; i < 4; i++) {
+                    bars[i].pivot.rotation.x *= 0.9;
+                    bars[i].group.rotation.y *= 0.9;
+                    bars[i].group.position.x += (bars[i].baseX - bars[i].group.position.x) * 0.08;
+                    bars[i].pivot.position.y += (0.825 - bars[i].pivot.position.y) * 0.1;
+                }
+                bodyGroup.rotation.x *= 0.92;
+                bodyGroup.rotation.z = 0.02 * Math.sin(t * 3);
+                bodyGroup.position.y *= 0.9;
+
+            } else {
+                // IDLE
+                const breathe = 0.006 * Math.sin(t * 1.1);
+                const look = 0.015 * Math.sin(t * 0.28) * Math.cos(t * 0.17);
+
+                bodyGroup.rotation.x = breathe;
+                bodyGroup.rotation.z = look;
+                bodyGroup.position.y *= 0.92;
+
+                for (let i = 0; i < 4; i++) {
+                    bars[i].pivot.rotation.x += (0.008 * Math.sin(t * 0.7 + i * 1.3) - bars[i].pivot.rotation.x) * 0.05;
+                    bars[i].group.rotation.y *= 0.93;
+                    bars[i].group.position.x += (bars[i].baseX - bars[i].group.position.x) * 0.06;
+                    bars[i].pivot.position.y += (0.825 - bars[i].pivot.position.y) * 0.08;
+                }
+            }
+        }
+
+        /* ============================================================
+           TARS AI
+           ============================================================ */
+        function pickTarget() {
+            const margin = 4;
+            const range = ROOM / 2 - margin;
+            tars.targetPos.set(
+                (Math.random() - 0.5) * 2 * range,
+                0,
+                (Math.random() - 0.5) * 2 * range
+            );
+        }
+
+        function updateTARSAI(dt) {
+            if (!tars) return;
+            const { position, targetPos } = tars;
+
+            switch (tars.state) {
+                case 'IDLE':
+                    tars.idleTimer -= dt;
+                    if (tars.idleTimer <= 0) {
+                        pickTarget();
+                        tars.state = 'TURNING';
+                    }
+                    break;
+
+                case 'TURNING': {
+                    const dx = targetPos.x - position.x;
+                    const dz = targetPos.z - position.z;
+                    const targetAngle = Math.atan2(dx, dz);
+                    let diff = targetAngle - tars.rotation;
+                    while (diff > Math.PI) diff -= 2 * Math.PI;
+                    while (diff < -Math.PI) diff += 2 * Math.PI;
+
+                    if (Math.abs(diff) < 0.06) {
+                        tars.rotation = targetAngle;
+                        tars.state = 'WALKING';
+                        tars.walkPhase = 0;
+                    } else {
+                        const turnAmt = Math.sign(diff) * Math.min(Math.abs(diff), tars.turnSpeed * dt);
+                        tars.rotation += turnAmt;
+                    }
+                    break;
+                }
+
+                case 'WALKING': {
+                    const dx = targetPos.x - position.x;
+                    const dz = targetPos.z - position.z;
+                    const dist = Math.sqrt(dx * dx + dz * dz);
+
+                    if (dist < 0.8) {
+                        tars.state = 'IDLE';
+                        tars.idleTimer = 1.5 + Math.random() * 4;
+                        tars.walkPhase = 0;
+                    } else {
+                        const speed = tars.walkSpeed;
+                        position.x += dx / dist * speed * dt;
+                        position.z += dz / dist * speed * dt;
+                        tars.walkPhase = (tars.walkPhase + dt / tars.stepPeriod) % 1;
+
+                        // Boundary check
+                        const bnd = ROOM / 2 - 2;
+                        if (Math.abs(position.x) > bnd || Math.abs(position.z) > bnd) {
+                            pickTarget();
+                            tars.state = 'TURNING';
+                        }
+                    }
+                    break;
+                }
+            }
+
+            // Apply to scene
+            tars.root.position.set(position.x, 0, position.z);
+            tars.root.rotation.y = tars.rotation;
+        }
+
+        /* ============================================================
+           PLAYER MOVEMENT
+           ============================================================ */
+        function updatePlayer(dt) {
+            if (!controls.isLocked) return;
+            const dir = new THREE.Vector3();
+            const right = new THREE.Vector3();
+            camera.getWorldDirection(dir);
+            dir.y = 0; dir.normalize();
+            right.crossVectors(dir, new THREE.Vector3(0, 1, 0)).normalize();
+
+            const vel = new THREE.Vector3();
+            if (keys.w) vel.add(dir);
+            if (keys.s) vel.sub(dir);
+            if (keys.d) vel.add(right);
+            if (keys.a) vel.sub(right);
+
+            if (vel.lengthSq() > 0) {
+                vel.normalize().multiplyScalar(moveSpeed * dt);
+                camera.position.add(vel);
+            }
+
+            // Clamp to room
+            const bnd = ROOM / 2 - 1;
+            camera.position.x = THREE.MathUtils.clamp(camera.position.x, -bnd, bnd);
+            camera.position.z = THREE.MathUtils.clamp(camera.position.z, -bnd, bnd);
+            camera.position.y = 1.7;
+        }
+
+        /* ============================================================
+           HUD
+           ============================================================ */
+        function updateHUD() {
+            if (!tars) return;
+            const hud = document.getElementById('hud');
+            const st = tars.state;
+            const px = tars.position.x.toFixed(1);
+            const pz = tars.position.z.toFixed(1);
+            const fov = camera.fov.toFixed(0);
+            hud.innerHTML = `TARS STATE: <span style="color:#8ab4d8">${st}</span><br>` +
+                `GAIT: <span style="color:#8ab4d8">${tars.gait}</span> &nbsp;[G to cycle]<br>` +
+                `POS: ${px}, ${pz}<br>FOV: ${fov}°`;
+        }
+
+        /* ============================================================
+           MAIN LOOP
+           ============================================================ */
+        function animate() {
+            requestAnimationFrame(animate);
+            const dt = Math.min(clock.getDelta(), 0.05);
+
+            updatePlayer(dt);
+            updateTARSAI(dt);
+            updateTARSAnimation(dt);
+            updateHUD();
+
+            renderer.render(scene, camera);
+        }
+
+        /* ============================================================
+           START
+           ============================================================ */
+        init();
+    </script>
+</body>
+
+</html>

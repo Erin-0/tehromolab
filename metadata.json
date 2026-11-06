@@ -1,0 +1,6 @@
+{
+  "name": "Thermodynamic Heat Pump Apparatus",
+  "description": "Interactive 3D laboratory compression heat pump simulation with real-time calorimetry, dual water baths (Qk, Qh), expansion throttle (Qe), analog manometers, and digital power/energy metering.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

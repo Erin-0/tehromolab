@@ -1,0 +1,926 @@
+{
+      "page_idx": 7,
+      "blocks": [
+        {
+          "type": "header",
+          "bbox": [
+            0.17,
+            0.175,
+            0.221,
+            0.192
+          ],
+          "content": "TP2"
+        },
+        {
+          "type": "header",
+          "bbox": [
+            0.359,
+            0.152,
+            0.528,
+            0.182
+          ],
+          "content": "Calorimétrie"
+        },
+        {
+          "type": "paragraph_title",
+          "bbox": [
+            0.162,
+            0.234,
+            0.351,
+            0.253
+          ],
+          "level": 2,
+          "content": "But de la manipulation"
+        },
+        {
+          "type": "text",
+          "bbox": [
+            0.151,
+            0.248,
+            0.822,
+            0.363
+          ],
+          "content": "repose sur le premier principe de la thermodynamique ou principe de conservation de l'énergie interne.Il existe plusieurs types de calorimètre (à glace, à résistance...Celui tilisé an le TP sera le calorimètre adiabatique."
+        },
+        {
+          "type": "text",
+          "bbox": [
+            0.137,
+            0.385,
+            0.828,
+            0.493
+          ],
+          "content": "On se propose dans un premier temps de déterminer la chaleur spécifique d'un échantillon de cuivre. Dans un second temps, on démontrera l’équivalence entre l’énergie électrique et la chaleur ainsi que la détermination du coefficient de Joule."
+        },
+        {
+          "type": "paragraph_title",
+          "bbox": [
+            0.212,
+            0.528,
+            0.44,
+            0.545
+          ],
+          "level": 2,
+          "content": "1. Rappels théoriques"
+        },
+        {
+          "type": "paragraph_title",
+          "bbox": [
+            0.206,
+            0.583,
+            0.773,
+            0.63
+          ],
+          "level": 2,
+          "content": "1.1. Détermination de la chaleur massique d'un solide par la méthode du mélange."
+        },
+        {
+          "type": "text",
+          "bbox": [
+            0.105,
+            0.681,
+            0.845,
+            0.85
+          ],
+          "content": "On mélange dans un calorimètre (de valeur en eau $\\mu _ { o }$ une masse d’eau $m_{o}$ et une masse de cuivre de $m _ { c u }$ de chaleur massique $c_{cu}$ . A l'instant initial (t = 0) le mélange est à la température $\\theta_{0}$ . On y ajoute ensuite une masse $m_{1}$ d'eau chaude portée à la température. Les échanges thermiques pour l'ensemble $\\theta _ { 1 }$ (calorimètre- eau - solide) conduisent à un équilibre thermique à la température finale $\\theta_{f}$"
+        },
+        {
+          "type": "text",
+          "bbox": [
+            0.1,
+            0.86,
+            0.849,
+            0.937
+          ],
+          "content": "L'équation calorimétrique de ce système, dans les conditions adiabatiques(δQ = 0), permet de déduire la chaleur massique à partir de"
+        },
+        {
+          "type": "page_number",
+          "bbox": [
+            0.45,
+            0.939,
+            0.473,
+            0.953
+          ],
+          "content": "28"
+        }
+      ]
+    },
+    {
+      "page_idx": 8,
+      "blocks": [
+        {
+          "type": "text",
+          "bbox": [
+            0.224,
+            0.146,
+            0.814,
+            0.228
+          ],
+          "content": "essayer d'ouvrir le couvercle."
+        },
+        {
+          "type": "text",
+          "bbox": [
+            0.2,
+            0.22,
+            0.816,
+            0.295
+          ],
+          "content": "possible d'ouvrir le couvercle."
+        },
+        {
+          "type": "text",
+          "bbox": [
+            0.165,
+            0.3,
+            0.822,
+            0.393
+          ],
+          "content": "saturante de 'eau. On peut alors vérifir la formule de Duperray et déterminer la chaleur latente de vaporisation $L _ { v } \\dot { \\bar { u } }$ partir de la relation de Clapeyron."
+        },
+        {
+          "type": "paragraph_title",
+          "bbox": [
+            0.258,
+            0.419,
+            0.494,
+            0.439
+          ],
+          "level": 2,
+          "content": "2.2.2. Formule de Duperray :"
+        },
+        {
+          "type": "text",
+          "bbox": [
+            0.154,
+            0.437,
+            0.827,
+            0.519
+          ],
+          "content": "Une formule purement empirique, et valable uniquement dans le cas de l’eau, a été proposé par Duperray. Elle permet de calculer la pression de vapeur saturante de l'eau en fonction de la température, et s’écrit:"
+        },
+        {
+          "type": "equation",
+          "bbox": [
+            0.204,
+            0.548,
+            0.768,
+            0.592
+          ],
+          "content": "\\mathrm{P}_{S}\\mathrm{D}_{D^{\\prime}} \\mathrm{n}_{P^{\\prime}} \\mathrm{T}_{o}=\\mathrm{P}_{o}\\left(\\frac{\\mathrm{T}}{\\mathrm{T}_{o}}\\right)^{4} ; \\quad a v e c T_{o}=100^{\\circ} C e t \\quad P_{o}=1 b a r",
+          "image_source": "images/page_8_equation_5.jpg"
+        },
+        {
+          "type": "text",
+          "bbox": [
+            0.141,
+            0.617,
+            0.836,
+            0.655
+          ],
+          "content": "OùT estla température exprimée en degré Celcius $^ { o } C$ et $P_{S}$ la pression de vapeur saturante exprimée en bar."
+        },
+        {
+          "type": "text",
+          "bbox": [
+            0.164,
+            0.673,
+            0.839,
+            0.712
+          ],
+          "content": "√ Rassembler les résultats relatifs à la phase de refroidissement dans le tableau suivant :"
+        },
+        {
+          "type": "table",
+          "bbox": [
+            0.172,
+            0.709,
+            0.849,
+            0.91
+          ],
+          "content": "<table><tr><td></td><td colspan=4></td></tr><tr><td>t(s)</td><td>T $( ^ { \\circ } C )$ </td><td>■ $P_{r}$  $( b a r )$ </td><td>■ $P_{S}$  $( b a r )$ </td><td> $( P _ { S } ) _ { D u p e r r a y }$ _ $( b a r )$ </td></tr><tr><td>0</td><td>80</td><td>……</td><td>……</td><td></td></tr><tr><td>1</td><td></td><td></td><td></td><td></td></tr><tr><td>2</td><td></td><td></td><td></td><td></td></tr><tr><td></td><td></td><td></td><td></td><td></td></tr></table>",
+          "captions": [],
+          "footnotes": [],
+          "image_source": "images/page_8_table_8.jpg"
+        },
+        {
+          "type": "page_number",
+          "bbox": [
+            0.456,
+            0.939,
+            0.479,
+            0.953
+          ],
+          "content": "26"
+        }
+      ]
+    },
+    {
+      "page_idx": 9,
+      "blocks": [
+        {
+          "type": "text",
+          "bbox": [
+            0.176,
+            0.137,
+            0.8,
+            0.224
+          ],
+          "content": "l’équilibre thermique."
+        },
+        {
+          "type": "text",
+          "bbox": [
+            0.216,
+            0.214,
+            0.722,
+            0.267
+          ],
+          "content": "La quantité de chaleur Q échangéeest donnée par l'expression :"
+        },
+        {
+          "type": "equation",
+          "bbox": [
+            0.361,
+            0.269,
+            0.594,
+            0.304
+          ],
+          "content": "Q = ( m _ { o } + \\mu _ { o } ) c _ { o } ( \\theta _ { f } - \\theta _ { o } ) ,",
+          "image_source": "images/page_9_equation_2.jpg"
+        },
+        {
+          "type": "text",
+          "bbox": [
+            0.212,
+            0.316,
+            0.788,
+            0.362
+          ],
+          "content": "L’énergie électrique dissipée dans la résistance est donnée par la loi de"
+        },
+        {
+          "type": "text",
+          "bbox": [
+            0.163,
+            0.372,
+            0.221,
+            0.388
+          ],
+          "content": "Joule :"
+        },
+        {
+          "type": "equation",
+          "bbox": [
+            0.371,
+            0.373,
+            0.588,
+            0.415
+          ],
+          "content": "W_{e}=UI=RI^{2}t=\\frac{U^{2}}{R}t",
+          "image_source": "images/page_9_equation_5.jpg"
+        },
+        {
+          "type": "paragraph_title",
+          "bbox": [
+            0.23,
+            0.452,
+            0.432,
+            0.474
+          ],
+          "level": 2,
+          "content": "2. Etude expérimentale"
+        },
+        {
+          "type": "paragraph_title",
+          "bbox": [
+            0.153,
+            0.509,
+            0.285,
+            0.528
+          ],
+          "level": 2,
+          "content": "Matériel utilisé"
+        },
+        {
+          "type": "text",
+          "bbox": [
+            0.176,
+            0.552,
+            0.759,
+            0.578
+          ],
+          "content": "√ Un calorimètre avec une résistance chauffante Ret un agitateur."
+        },
+        {
+          "type": "text",
+          "bbox": [
+            0.174,
+            0.58,
+            0.763,
+            0.605
+          ],
+          "content": "✓ Un thermomètre $( 0 ^ { \\circ } C - 1 1 0 ^ { \\circ } C )$ gradué au 1/10èmede degré."
+        },
+        {
+          "type": "text",
+          "bbox": [
+            0.172,
+            0.614,
+            0.421,
+            0.634
+          ],
+          "content": "√ Une balance électronique."
+        },
+        {
+          "type": "text",
+          "bbox": [
+            0.17,
+            0.643,
+            0.345,
+            0.662
+          ],
+          "content": "✓ Un chronomètre."
+        },
+        {
+          "type": "text",
+          "bbox": [
+            0.169,
+            0.672,
+            0.431,
+            0.69
+          ],
+          "content": "√ Une alimentation continue."
+        },
+        {
+          "type": "text",
+          "bbox": [
+            0.168,
+            0.7,
+            0.492,
+            0.72
+          ],
+          "content": "√ Un Voltmètre et un Ampèremètre."
+        },
+        {
+          "type": "text",
+          "bbox": [
+            0.168,
+            0.729,
+            0.378,
+            0.749
+          ],
+          "content": "√ Une masse de cuivre."
+        },
+        {
+          "type": "paragraph_title",
+          "bbox": [
+            0.212,
+            0.789,
+            0.86,
+            0.838
+          ],
+          "level": 2,
+          "content": "2.1. Détermination expérimentale de la chaleur massique $c _ { c u } d u$ cuivre"
+        },
+        {
+          "type": "text",
+          "bbox": [
+            0.135,
+            0.846,
+            0.866,
+            0.88
+          ],
+          "content": "Pour mesurer la chaleur massique du cuivre, on suit le mode opératoire ci-"
+        },
+        {
+          "type": "page_number",
+          "bbox": [
+            0.473,
+            0.914,
+            0.498,
+            0.929
+          ],
+          "content": "30"
+        }
+      ]
+    },
+    {
+      "page_idx": 10,
+      "blocks": [
+        {
+          "type": "text",
+          "bbox": [
+            0.183,
+            0.178,
+            0.245,
+            0.197
+          ],
+          "content": "dessous:"
+        },
+        {
+          "type": "text",
+          "bbox": [
+            0.196,
+            0.201,
+            0.832,
+            0.247
+          ],
+          "content": "√ Déterminer la masse $m _ { v }$ du vase calorimétrique par pesée à l'aide de la balance."
+        },
+        {
+          "type": "text",
+          "bbox": [
+            0.19,
+            0.285,
+            0.832,
+            0.339
+          ],
+          "content": "√ Placer dans ce vase une masse $m_{o}d$ eau et la mesurer par pesée à l'aide de la balance $( m _ { o } = m ( e a u + v a s e ) - m _ { v } )$"
+        },
+        {
+          "type": "text",
+          "bbox": [
+            0.187,
+            0.369,
+            0.835,
+            0.419
+          ],
+          "content": "Mesurer la masse $m _ { c u }$ du morceau du cuivre à l'aide de la balance et l’introduire ensuite dans le calorimètre."
+        },
+        {
+          "type": "text",
+          "bbox": [
+            0.185,
+            0.454,
+            0.834,
+            0.501
+          ],
+          "content": "√ Agiter doucement (pendant environ 5 minutes) jusqu'à ce que l'équilibre thermique soit atteint, noter alors la température $\\theta_{0}$ (initiale) du système."
+        },
+        {
+          "type": "text",
+          "bbox": [
+            0.185,
+            0.536,
+            0.841,
+            0.613
+          ],
+          "content": "√ Mettre dans ce calorimètre une masse $m _ { 1 }$ d'eau chauffée préalablement à une température $\\theta _ { 1 }$ agiter et attendre l'équilibre (1 mn),puis mesurer la température $\\theta_{f}(\\sin \\alpha / e)$ correspondante."
+        },
+        {
+          "type": "text",
+          "bbox": [
+            0.183,
+            0.638,
+            0.849,
+            0.693
+          ],
+          "content": "√ Enlever le thermomètre et le couvercle, peser le vase calorimétrique et déduire la massem1."
+        },
+        {
+          "type": "text",
+          "bbox": [
+            0.178,
+            0.729,
+            0.592,
+            0.754
+          ],
+          "content": "Exploitation des résultats expérimentaux"
+        },
+        {
+          "type": "text",
+          "bbox": [
+            0.178,
+            0.754,
+            0.733,
+            0.784
+          ],
+          "content": "√ Ecrire l’équation calorimétrique de cet échange thermique."
+        },
+        {
+          "type": "text",
+          "bbox": [
+            0.177,
+            0.782,
+            0.764,
+            0.816
+          ],
+          "content": "√ Donner alors l'expression de la chaleur massique $c_{cu}$ du cuivre."
+        },
+        {
+          "type": "text",
+          "bbox": [
+            0.176,
+            0.816,
+            0.616,
+            0.848
+          ],
+          "content": "√ En déduire l'expression de l'incertitude $\\Delta c _ { c u }$"
+        },
+        {
+          "type": "text",
+          "bbox": [
+            0.174,
+            0.864,
+            0.741,
+            0.906
+          ],
+          "content": "√ Comparer ce résultat avec la valeur donnée par les tables :"
+        },
+        {
+          "type": "equation",
+          "bbox": [
+            0.43,
+            0.917,
+            0.671,
+            0.952
+          ],
+          "content": "c_{cu}=0.1   cal.   g^{-1} \\cdot ^{o}C^{-1}",
+          "image_source": "images/page_10_equation_12.jpg"
+        },
+        {
+          "type": "page_number",
+          "bbox": [
+            0.516,
+            0.969,
+            0.539,
+            0.982
+          ],
+          "content": "31"
+        }
+      ]
+    },
+    {
+      "page_idx": 11,
+      "blocks": [
+        {
+          "type": "text",
+          "bbox": [
+            0.208,
+            0.154,
+            0.819,
+            0.201
+          ],
+          "content": "s'écrit : mesures simples de températures.Le bilan énergétique relatif à cet ensemble"
+        },
+        {
+          "type": "equation",
+          "bbox": [
+            0.229,
+            0.221,
+            0.796,
+            0.268
+          ],
+          "content": "\\delta Q = (m_o + \\mu_o)c_o(\\theta_f - \\theta_o) + m_{cu}c_{cu}(\\theta_f - \\theta_o) + m_{1}c_o(\\theta_f - \\theta_1) = 0",
+          "image_source": "images/page_11_equation_1.jpg"
+        },
+        {
+          "type": "text",
+          "bbox": [
+            0.183,
+            0.272,
+            0.831,
+            0.418
+          ],
+          "content": "Où $c _ { o }$ est la chaleur massique de l'eau: paramètre $\\mu _ { o }$ $c_{o}=1   call .g^{-1}.^{o}C^{-1}$ Le désigne la valeur en eau du calorimètre, elle a l'’unité d’une masse et sera affichée dans la salle de TP. $\\mu _ { o }$ représente, en fait, une masse d’eau hypothétique, qui aurait absorbé la même quantité de chaleur que celle absorbée par le calorimètre et ses accessoires(agitateur, vase calorimétrique, thermomètre, etc..)."
+        },
+        {
+          "type": "paragraph_title",
+          "bbox": [
+            0.175,
+            0.444,
+            0.645,
+            0.474
+          ],
+          "level": 2,
+          "content": "1.2. Mesures calorimétriques par la méthode électrique"
+        },
+        {
+          "type": "text",
+          "bbox": [
+            0.169,
+            0.496,
+            0.68,
+            0.524
+          ],
+          "content": "Pour déterminer le coefficient de joule donné par la relation :"
+        },
+        {
+          "type": "equation",
+          "bbox": [
+            0.467,
+            0.546,
+            0.539,
+            0.584
+          ],
+          "content": "J = \\frac { W _ { e } } { Q }",
+          "image_source": "images/page_11_equation_5.jpg"
+        },
+        {
+          "type": "text",
+          "bbox": [
+            0.145,
+            0.587,
+            0.846,
+            0.727
+          ],
+          "content": "Ce coefficient représente le rapport entre l'énergie électrique fournie We(exprimée en Joule) et la quantité de chaleur équivalente récupérée (exprimée en calorie) .On immerge une résistance électrique chauffante R dans un calorimètre (de valeur en eau $\\mu _ { o } )$ contenant une masse d'eau $m _ { o }$ . A l'instant initial (t = 0) le mélange est à la température $\\theta_{0}$"
+        },
+        {
+          "type": "text",
+          "bbox": [
+            0.129,
+            0.728,
+            0.854,
+            0.876
+          ],
+          "content": "On fait passer, ensuite, dans cette résistance, un courant I sous une tension Udont les valeurs sont indiquées respectivement par l'ampèremètre (A) et le voltmètre (U) (Fig. 1).Le passage du courant électrique dans la résistance entraîne un échauffement de la résistance par effet Joule; la température de l’eau dans le calorimètre va donc augmenter de $\\Delta \\theta = (\\theta_{f} - \\theta_{o})$ , pendant un"
+        },
+        {
+          "type": "page_number",
+          "bbox": [
+            0.482,
+            0.89,
+            0.505,
+            0.903
+          ],
+          "content": "29"
+        }
+      ]
+    },
+    {
+      "page_idx": 12,
+      "blocks": [
+        {
+          "type": "image",
+          "bbox": [
+            0.421,
+            0.136,
+            0.579,
+            0.306
+          ],
+          "content": "",
+          "captions": [
+            {
+              "bbox": [
+                0.493,
+                0.327,
+                0.571,
+                0.345
+              ],
+              "content": "Figure. 1"
+            }
+          ],
+          "footnotes": [],
+          "image_source": "images/page_12_image_0.jpg"
+        },
+        {
+          "type": "text",
+          "bbox": [
+            0.163,
+            0.36,
+            0.822,
+            0.398
+          ],
+          "continues_prev": true,
+          "content": "√ Déterminer la masse mdu vase calorimétrique par pesée à l'aide de la balance."
+        },
+        {
+          "type": "text",
+          "bbox": [
+            0.163,
+            0.415,
+            0.791,
+            0.436
+          ],
+          "content": "√ Remplir ce vase d'une masse $m _ { o } d ^ { \\prime } e a u ( m _ { o } = m ( e a u + v a s e ) - m _ { v } )$ 。"
+        },
+        {
+          "type": "text",
+          "bbox": [
+            0.164,
+            0.454,
+            0.828,
+            0.494
+          ],
+          "content": "√ Replacer le vase dans le calorimètre, fermer et mettre en place le thermomètre."
+        },
+        {
+          "type": "text",
+          "bbox": [
+            0.166,
+            0.509,
+            0.836,
+            0.573
+          ],
+          "content": "√ La température de l'eau dans le calorimètre doit être constante. Si elle varie avec le temps attendre qu'elle se stabilise. Soit $\\theta_{o}$ cette température."
+        },
+        {
+          "type": "text",
+          "bbox": [
+            0.164,
+            0.584,
+            0.843,
+            0.632
+          ],
+          "content": "√ Mettre en marche le générateur et fermer l'interrupteur tout en déclenchant simultanément le chronomètre."
+        },
+        {
+          "type": "text",
+          "bbox": [
+            0.162,
+            0.641,
+            0.851,
+            0.696
+          ],
+          "content": "√ Laisser passer le courant pendant 3 minutes et agiter doucement de façon continue."
+        },
+        {
+          "type": "text",
+          "bbox": [
+            0.159,
+            0.702,
+            0.862,
+            0.761
+          ],
+          "content": "√ Noter le courantI, la tension U, les calibres utilisés pour le voltmètre et l'Ampèremètre."
+        },
+        {
+          "type": "text",
+          "bbox": [
+            0.155,
+            0.764,
+            0.872,
+            0.831
+          ],
+          "content": "√ Couper le courant électrique et continuer à agiter doucement et $\\theta_{f}^{\\mathrm{i}}$ soit atteinte. constamment jusqu'à ce que la température d’équilibre"
+        },
+        {
+          "type": "page_number",
+          "bbox": [
+            0.518,
+            0.937,
+            0.541,
+            0.953
+          ],
+          "content": "33"
+        }
+      ]
+    },
+    {
+      "page_idx": 13,
+      "blocks": [
+        {
+          "type": "paragraph_title",
+          "bbox": [
+            0.203,
+            0.143,
+            0.559,
+            0.189
+          ],
+          "level": 2,
+          "content": "• Exploitation des résultats expérimentaux"
+        },
+        {
+          "type": "text",
+          "bbox": [
+            0.201,
+            0.186,
+            0.512,
+            0.224
+          ],
+          "content": "✓ Donner les expression de We et de Q."
+        },
+        {
+          "type": "text",
+          "bbox": [
+            0.199,
+            0.213,
+            0.632,
+            0.259
+          ],
+          "content": "✓ Donner les expressions des incertitudes ∆Weet ∆Q. Donner les expr"
+        },
+        {
+          "type": "text",
+          "bbox": [
+            0.197,
+            0.245,
+            0.684,
+            0.296
+          ],
+          "content": "$J = \\frac { \\dot { W } _ { e } } { Q }$ √ Ecrire l'expression explicite du coefficient de Joule"
+        },
+        {
+          "type": "text",
+          "bbox": [
+            0.192,
+            0.301,
+            0.552,
+            0.334
+          ],
+          "content": "✓ En déduire l'’expression de l’incertitude ∆J."
+        },
+        {
+          "type": "text",
+          "bbox": [
+            0.19,
+            0.336,
+            0.68,
+            0.372
+          ],
+          "content": "√ Regrouper les résultats obtenus dans le tableau suivant :"
+        },
+        {
+          "type": "table",
+          "bbox": [
+            0.15,
+            0.392,
+            0.834,
+            0.522
+          ],
+          "content": "<table><tr><td></td><td>U(V) C</td><td>alibre(</td><td>V) ∆(V)</td><td>CI(A)</td><td>alibre(A</td><td>)∆I(A)</td><td>t(s)</td><td>∆t(s)</td></tr><tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr><tr><td colspan=2> $\\overline{\\mu_{0}(g)}$ </td><td> $\\overline { { \\Delta \\mu _ { o } ( g ) } }$ </td><td> $\\overline{m_{0}(g)}$ </td><td> $\\overline{\\Delta m_{o}(g)}$ </td><td> $\\overline { \\theta _ { 0 } ( ^ { 0 } C ) }$ </td><td> $\\overline{\\Delta \\theta_{0}(^{\\circ}C)}$ </td><td> $\\overline{\\theta_{f}(^{o}C)}$ </td><td> $\\overline { { \\Delta \\theta _ { f } ( ^ { o } C ) } }$ </td></tr><tr><td colspan=2></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr></table>",
+          "captions": [],
+          "footnotes": [],
+          "image_source": "images/page_13_table_6.jpg"
+        },
+        {
+          "type": "table",
+          "bbox": [
+            0.142,
+            0.536,
+            0.833,
+            0.604
+          ],
+          "content": "| We(Joule) | ∆We(Joule) | Q(Cal) | ∆Q(Cal) | J(j/cal) | $\\Delta J(j/cal)$ |\n| --- | --- | --- | --- | --- | --- |",
+          "captions": [],
+          "footnotes": [
+            {
+              "bbox": [
+                0.144,
+                0.612,
+                0.284,
+                0.63
+              ],
+              "content": "On rappelle que:"
+            }
+          ],
+          "image_source": "images/page_13_table_7.jpg"
+        },
+        {
+          "type": "equation",
+          "bbox": [
+            0.167,
+            0.631,
+            0.466,
+            0.658
+          ],
+          "content": "\\cdot \\Delta U = (\\Delta U)_{leeture} + (\\Delta U)_{insturm}",
+          "image_source": "images/page_13_equation_9.jpg"
+        },
+        {
+          "type": "equation",
+          "bbox": [
+            0.186,
+            0.684,
+            0.781,
+            0.74
+          ],
+          "content": "\\left( \\Delta U \\right)_{leeture} = \\frac{1 \\times canbe}{number\\ total\\ de\\ grad\\ uation\\ de\\ l'\\&chell\\ chosize}",
+          "image_source": "images/page_13_equation_10.jpg"
+        },
+        {
+          "type": "equation",
+          "bbox": [
+            0.316,
+            0.749,
+            0.616,
+            0.797
+          ],
+          "content": "\\frac{\\left ( \\Delta U \\right ) _{insterm}}{ } = \\frac{classe \\times callbe^{2}}{100}",
+          "image_source": "images/page_13_equation_11.jpg"
+        },
+        {
+          "type": "text",
+          "bbox": [
+            0.152,
+            0.789,
+            0.83,
+            0.881
+          ],
+          "content": "Les mêmes expression restent valables pour le calcul de ∆I. de mesure."
+        },
+        {
+          "type": "page_number",
+          "bbox": [
+            0.439,
+            0.941,
+            0.461,
+            0.956
+          ],
+          "content": "34"
+        }
+      ]
+    },
