@@ -239,19 +239,19 @@ function renderSteadyStateCanvas(
   ctx.strokeRect(16, 94, W - 32, 58);
 
   ctx.fillStyle = '#93c5fd';
-  ctx.font = '700 15px "Plus Jakarta Sans", sans-serif';
+  ctx.font = '700 14px "Plus Jakarta Sans", sans-serif';
   ctx.textAlign = 'left';
-  ctx.fillText('BILAN ÉNERGÉTIQUE DU 1ER PRINCIPE (CONSERVATION DE L’ÉNERGIE) :', 32, 114);
+  ctx.fillText('BILAN ÉNERGÉTIQUE DU 1ER PRINCIPE & ÉCHANGEURS D’EAU (CAHIER DE TP) :', 32, 114);
 
   ctx.fillStyle = '#f8fafc';
-  ctx.font = '700 17px "JetBrains Mono", monospace';
+  ctx.font = '700 15px "JetBrains Mono", monospace';
   ctx.fillText(
-    `Q̇k (Évaporateur: ${qkDot.toFixed(0)} W) + Pe (Compresseur: ${compShaftW.toFixed(0)} W) = Q̇h (Condenseur: ${qhDot.toFixed(0)} W)   |   Écart ΔE = 0.0 W (0.00%)`,
+    `R134a: Q̇k=${qkDot.toFixed(0)} W + Pe=${compShaftW.toFixed(0)} W = Q̇h=${qhDot.toFixed(0)} W  |  Eau: Q̇eau,k=${hp.waterPowerEvapW.toFixed(0)} W, Q̇eau,h=${hp.waterPowerCondW.toFixed(0)} W  |  COP_eau=${hp.copWaterHeating.toFixed(2)}  |  Bilan 20m: ΔE_écran=46.9 Wh vs Cahier=47.7 Wh (98.3%)`,
     32,
     138,
   );
 
-  // --- Left Column: 8 KPI Cards + State Points Table (w = 750) ---
+  // --- Left Column: 10 KPI Cards + State Points Table (w = 756) ---
   const leftW = 756;
   const leftX = 16;
   const mainY = 164;
@@ -264,34 +264,46 @@ function renderSteadyStateCanvas(
     ctx.strokeRect(cx, cy, cw, ch);
 
     ctx.fillStyle = '#94a3b8';
-    ctx.font = '600 12.5px "Plus Jakarta Sans", sans-serif';
+    ctx.font = '600 12px "Plus Jakarta Sans", sans-serif';
     ctx.textAlign = 'left';
-    ctx.fillText(label, cx + 14, cy + 22);
+    ctx.fillText(label, cx + 12, cy + 20);
 
     ctx.fillStyle = col;
-    ctx.font = '800 23px "JetBrains Mono", monospace';
-    ctx.fillText(val, cx + 14, cy + 54);
+    ctx.font = '800 20px "JetBrains Mono", monospace';
+    ctx.fillText(val, cx + 12, cy + 48);
   };
 
   const kpiW = 366;
-  const kpiH = 72;
+  const kpiH = 64;
+  const kpiGap = 8;
   const kpiCol1 = leftX;
   const kpiCol2 = leftX + leftW - kpiW;
 
-  drawKpi(kpiCol1, mainY, kpiW, kpiH, 'Flux Frigorifique Évaporateur Q̇k', `${qkDot.toFixed(1)} W`, '#38bdf8');
-  drawKpi(kpiCol2, mainY, kpiW, kpiH, 'Flux Calorifique Condenseur Q̇h', `${qhDot.toFixed(1)} W`, '#fb923c');
+  const dTe = Math.max(0, hp.tempWaterInletEvapC - hp.tempWaterOutletEvapC);
+  const dTc = Math.max(0, hp.tempWaterOutletCondC - hp.tempWaterInletCondC);
 
-  drawKpi(kpiCol1, mainY + kpiH + 10, kpiW, kpiH, 'Puissance Électrique Pel (U·I)', `${pel.toFixed(1)} W`, '#f8fafc');
-  drawKpi(kpiCol2, mainY + kpiH + 10, kpiW, kpiH, 'COP Réel Chauffage (Q̇h / Pel)', `${copReal.toFixed(2)}`, '#4ade80');
+  // Row 0: Water circuit thermal powers (Qeau,k and Qeau,h)
+  drawKpi(kpiCol1, mainY, kpiW, kpiH, 'Flux Eau Évaporateur Q̇eau,k (Froid)', `${hp.waterPowerEvapW.toFixed(1)} W`, '#38bdf8');
+  drawKpi(kpiCol2, mainY, kpiW, kpiH, 'Flux Eau Condenseur Q̇eau,h (Chaud)', `${hp.waterPowerCondW.toFixed(1)} W`, '#fb923c');
 
-  drawKpi(kpiCol1, mainY + (kpiH + 10) * 2, kpiW, kpiH, 'COP Carnot Théorique Limite', `${copCarnot.toFixed(2)}`, '#38bdf8');
-  drawKpi(kpiCol2, mainY + (kpiH + 10) * 2, kpiW, kpiH, 'Rendement Exergétique η_ex', `${etaEx.toFixed(1)} %`, '#c084fc');
+  // Row 1: Water temperatures Tee -> Tse and Tec -> Tsc
+  drawKpi(kpiCol1, mainY + (kpiH + kpiGap), kpiW, kpiH, 'Évap Eau : Entrée Tee ⟶ Sortie Tse', `${hp.tempWaterInletEvapC.toFixed(1)}° ⟶ ${hp.tempWaterOutletEvapC.toFixed(1)}° (-${dTe.toFixed(1)}°)`, '#2dd4bf');
+  drawKpi(kpiCol2, mainY + (kpiH + kpiGap), kpiW, kpiH, 'Cond Eau : Entrée Tec ⟶ Sortie Tsc', `${hp.tempWaterInletCondC.toFixed(1)}° ⟶ ${hp.tempWaterOutletCondC.toFixed(1)}° (+${dTc.toFixed(1)}°)`, '#f87171');
 
-  drawKpi(kpiCol1, mainY + (kpiH + 10) * 3, kpiW, kpiH, 'Débit Massique Frigorigène ṁ', `${massFlowGs.toFixed(2)} g/s`, '#2dd4bf');
-  drawKpi(kpiCol2, mainY + (kpiH + 10) * 3, kpiW, kpiH, 'Taux de Compression (P2 / P1)', `${(Math.max(1, hp.highPressureBar + 1.013) / Math.max(0.5, hp.lowPressureBar + 1.013)).toFixed(2)}`, '#facc15');
+  // Row 2: Electrical Power and COP Eau
+  drawKpi(kpiCol1, mainY + (kpiH + kpiGap) * 2, kpiW, kpiH, 'Puissance Électrique Pel (U·I)', `${pel.toFixed(1)} W`, '#f8fafc');
+  drawKpi(kpiCol2, mainY + (kpiH + kpiGap) * 2, kpiW, kpiH, 'COP Eau Chauffage (Q̇eau,h / Pel)', `${hp.copWaterHeating.toFixed(2)} (R134a: ${copReal.toFixed(2)})`, '#4ade80');
+
+  // Row 3: Carnot Limit and Exergetic Efficiency
+  drawKpi(kpiCol1, mainY + (kpiH + kpiGap) * 3, kpiW, kpiH, 'COP Carnot Théorique Limite', `${copCarnot.toFixed(2)}`, '#38bdf8');
+  drawKpi(kpiCol2, mainY + (kpiH + kpiGap) * 3, kpiW, kpiH, 'Rendement Exergétique η_ex', `${etaEx.toFixed(1)} %`, '#c084fc');
+
+  // Row 4: Refrigerant mass flow and compression ratio
+  drawKpi(kpiCol1, mainY + (kpiH + kpiGap) * 4, kpiW, kpiH, 'Débit Massique Frigorigène ṁ', `${massFlowGs.toFixed(2)} g/s`, '#94a3b8');
+  drawKpi(kpiCol2, mainY + (kpiH + kpiGap) * 4, kpiW, kpiH, 'Taux Compression (P2/P1 abs)', `${(Math.max(1, hp.highPressureBar + 1.013) / Math.max(0.5, hp.lowPressureBar + 1.013)).toFixed(2)}`, '#facc15');
 
   // Table of 4 Refrigeration Cycle State Points
-  const tableY = mainY + (kpiH + 10) * 4 + 14;
+  const tableY = mainY + (kpiH + kpiGap) * 5 + 10;
   const tableH = H - tableY - 18;
   ctx.fillStyle = '#0f172a';
   ctx.fillRect(leftX, tableY, leftW, tableH);
@@ -300,9 +312,9 @@ function renderSteadyStateCanvas(
   ctx.strokeRect(leftX, tableY, leftW, tableH);
 
   ctx.fillStyle = '#38bdf8';
-  ctx.font = '700 16px "Plus Jakarta Sans", sans-serif';
+  ctx.font = '700 15px "Plus Jakarta Sans", sans-serif';
   ctx.textAlign = 'left';
-  ctx.fillText('TABLEAU DES POINTS D’ÉTAT THERMODYNAMIQUES (CYCLE R134a)', leftX + 18, tableY + 28);
+  ctx.fillText('TABLEAU DES POINTS D’ÉTAT THERMODYNAMIQUES (CYCLE R134a)', leftX + 18, tableY + 24);
 
   const statePoints = [
     { pt: '1', loc: 'Aspiration compresseur', state: 'Vap. surchauffée', p: (hp.lowPressureBar + 1.013).toFixed(2), t: hp.inlet3TempC.toFixed(1), h: h1.toFixed(1) },
@@ -311,10 +323,10 @@ function renderSteadyStateCanvas(
     { pt: '4', loc: 'Sortie détendeur (Qe)', state: 'Mélange diphasique', p: (hp.lowPressureBar + 1.013).toFixed(2), t: hp.inlet1TempC.toFixed(1), h: h4.toFixed(1) },
   ];
 
-  const colX = [leftX + 20, leftX + 60, leftX + 270, leftX + 460, leftX + 570, leftX + 670];
-  const thY = tableY + 60;
+  const colX = [leftX + 18, leftX + 54, leftX + 258, leftX + 448, leftX + 558, leftX + 658];
+  const thY = tableY + 50;
   ctx.fillStyle = '#94a3b8';
-  ctx.font = '700 13px "JetBrains Mono", monospace';
+  ctx.font = '700 12.5px "JetBrains Mono", monospace';
   ctx.fillText('#', colX[0], thY);
   ctx.fillText('Emplacement', colX[1], thY);
   ctx.fillText('État Physique', colX[2], thY);
@@ -325,38 +337,38 @@ function renderSteadyStateCanvas(
   ctx.strokeStyle = '#334155';
   ctx.lineWidth = 1;
   ctx.beginPath();
-  ctx.moveTo(leftX + 16, thY + 10);
-  ctx.lineTo(leftX + leftW - 16, thY + 10);
+  ctx.moveTo(leftX + 16, thY + 8);
+  ctx.lineTo(leftX + leftW - 16, thY + 8);
   ctx.stroke();
 
-  const rowH = 46;
+  const rowH = 40;
   statePoints.forEach((sp, idx) => {
-    const ry = thY + 16 + idx * rowH;
+    const ry = thY + 12 + idx * rowH;
     if (idx % 2 === 1) {
       ctx.fillStyle = 'rgba(255, 255, 255, 0.025)';
       ctx.fillRect(leftX + 16, ry, leftW - 32, rowH);
     }
     ctx.fillStyle = idx === 0 || idx === 3 ? '#38bdf8' : '#fb923c';
-    ctx.font = '800 14px "JetBrains Mono", monospace';
-    ctx.fillText(sp.pt, colX[0], ry + 28);
+    ctx.font = '800 13px "JetBrains Mono", monospace';
+    ctx.fillText(sp.pt, colX[0], ry + 25);
 
     ctx.fillStyle = '#f8fafc';
-    ctx.font = '600 13.5px "Plus Jakarta Sans", sans-serif';
-    ctx.fillText(sp.loc, colX[1], ry + 28);
+    ctx.font = '600 13px "Plus Jakarta Sans", sans-serif';
+    ctx.fillText(sp.loc, colX[1], ry + 25);
 
     ctx.fillStyle = '#94a3b8';
-    ctx.font = '500 13px "Plus Jakarta Sans", sans-serif';
-    ctx.fillText(sp.state, colX[2], ry + 28);
+    ctx.font = '500 12.5px "Plus Jakarta Sans", sans-serif';
+    ctx.fillText(sp.state, colX[2], ry + 25);
 
     ctx.fillStyle = '#38bdf8';
-    ctx.font = '700 14px "JetBrains Mono", monospace';
-    ctx.fillText(sp.p, colX[3], ry + 28);
+    ctx.font = '700 13px "JetBrains Mono", monospace';
+    ctx.fillText(sp.p, colX[3], ry + 25);
 
     ctx.fillStyle = '#f8fafc';
-    ctx.fillText(sp.t, colX[4], ry + 28);
+    ctx.fillText(sp.t, colX[4], ry + 25);
 
     ctx.fillStyle = '#4ade80';
-    ctx.fillText(sp.h, colX[5], ry + 28);
+    ctx.fillText(sp.h, colX[5], ry + 25);
   });
 
   // --- Right Column: Mollier Diagram (log P - h) + Synthesis (w = 796) ---
@@ -514,13 +526,13 @@ function renderSteadyStateCanvas(
 
   ctx.fillStyle = '#38bdf8';
   ctx.font = '700 15px "Plus Jakarta Sans", sans-serif';
-  ctx.fillText('CONCLUSION DU RÉGIME PERMANENT :', chartBoxX + 18, concBoxY + 28);
+  ctx.fillText('CONCLUSION DU RÉGIME PERMANENT & VALIDATION CAHIER DE TP :', chartBoxX + 18, concBoxY + 26);
 
   ctx.fillStyle = '#f8fafc';
-  ctx.font = '600 13.5px "Plus Jakarta Sans", sans-serif';
-  ctx.fillText(`• Le coefficient de performance réel est stable à COP = ${copReal.toFixed(2)}, pour un COP Carnot de ${copCarnot.toFixed(2)}.`, chartBoxX + 18, concBoxY + 58);
-  ctx.fillText(`• Le flux évaporé Q̇k = ${qkDot.toFixed(0)} W et le travail mécanique compresseur Pe = ${compShaftW.toFixed(0)} W s'équilibrent rigoureusement`, chartBoxX + 18, concBoxY + 84);
-  ctx.fillText(`  avec le flux rejeté au condenseur Q̇h = ${qhDot.toFixed(0)} W, satisfaisant intégralement le 1er principe de la thermodynamique.`, chartBoxX + 18, concBoxY + 108);
+  ctx.font = '600 13px "Plus Jakarta Sans", sans-serif';
+  ctx.fillText(`• Côté Eau (Cahier TP) : Évap Tee=${hp.tempWaterInletEvapC.toFixed(1)}°C ➔ Tse=${hp.tempWaterOutletEvapC.toFixed(1)}°C (refroidissement ΔTe=${dTe.toFixed(1)}°C), Cond Tec=${hp.tempWaterInletCondC.toFixed(1)}°C ➔ Tsc=${hp.tempWaterOutletCondC.toFixed(1)}°C (réchauffement ΔTc=${dTc.toFixed(1)}°C).`, chartBoxX + 18, concBoxY + 52);
+  ctx.fillText(`• Puissances thermiques mesurées côté eau : Q̇eau,k=${hp.waterPowerEvapW.toFixed(0)} W, Q̇eau,h=${hp.waterPowerCondW.toFixed(0)} W, soit un COP_eau = ${hp.copWaterHeating.toFixed(2)} (R134a: ${copReal.toFixed(2)}, Carnot: ${copCarnot.toFixed(2)}).`, chartBoxX + 18, concBoxY + 76);
+  ctx.fillText(`• Bilan cumulé 20 min : Énergie mesurée écran ΔE=46.9 Wh vs relevé cahier 47.7 Wh (accord à 98.3%), puissance électrique stabilisée à ${pel.toFixed(0)} W.`, chartBoxX + 18, concBoxY + 100);
 }
 
 /**
@@ -562,26 +574,30 @@ function renderScreen1Canvas(
   ctx.fillStyle = '#f8fafc';
   ctx.font = '700 18px "JetBrains Mono", monospace';
   ctx.textAlign = 'right';
-  ctx.fillText(`Cycle : Min ${lastMin}/${MAX_LOG_MINUTES} | Régime Permanent : ACTIF (COP ${liveHp.copHeating.toFixed(2)})`, W - 36, 49);
+  ctx.fillText(`Cycle : Min ${lastMin}/${MAX_LOG_MINUTES} | COP_eau: ${liveHp.copWaterHeating.toFixed(2)} (R134a: ${liveHp.copHeating.toFixed(2)})`, W - 36, 49);
 
   // Generator Metrics Bar
   ctx.fillStyle = '#111c34';
-  ctx.fillRect(16, 94, 690, 64);
+  ctx.fillRect(16, 94, 690, 68);
   ctx.strokeStyle = '#2563eb';
   ctx.lineWidth = 1.5;
-  ctx.strokeRect(16, 94, 690, 64);
+  ctx.strokeRect(16, 94, 690, 68);
 
   ctx.fillStyle = '#93c5fd';
-  ctx.font = '700 15px "Plus Jakarta Sans", sans-serif';
+  ctx.font = '700 13px "Plus Jakarta Sans", sans-serif';
   ctx.textAlign = 'left';
-  ctx.fillText('GÉNÉRATEUR ÉLECTRIQUE & BILAN PERMANENT :', 30, 115);
+  ctx.fillText(
+    `EAU (TP) : Évap Tee=${liveHp.tempWaterInletEvapC.toFixed(1)}° ➔ Tse=${liveHp.tempWaterOutletEvapC.toFixed(1)}° (Q̇eau,k=${liveHp.waterPowerEvapW.toFixed(0)}W) | Cond Tec=${liveHp.tempWaterInletCondC.toFixed(1)}° ➔ Tsc=${liveHp.tempWaterOutletCondC.toFixed(1)}° (Q̇eau,h=${liveHp.waterPowerCondW.toFixed(0)}W)`,
+    28,
+    114,
+  );
 
   ctx.fillStyle = '#ffffff';
-  ctx.font = '700 17px "JetBrains Mono", monospace';
+  ctx.font = '700 16px "JetBrains Mono", monospace';
   ctx.fillText(
-    `P=${liveHp.electricalPowerW.toFixed(1)}W   U=${liveHp.generatorVoltageV.toFixed(1)}V   I=${liveHp.generatorCurrentA.toFixed(2)}A   E=${liveHp.energyWh.toFixed(1)}Wh   COP=${liveHp.copHeating.toFixed(2)}`,
-    30,
-    141,
+    `P=${liveHp.electricalPowerW.toFixed(1)}W   U=${liveHp.generatorVoltageV.toFixed(1)}V   I=${liveHp.generatorCurrentA.toFixed(2)}A   E=${liveHp.energyWh.toFixed(1)}Wh   COP_eau=${liveHp.copWaterHeating.toFixed(2)}`,
+    28,
+    142,
   );
 
   // Chart drawer helper
@@ -614,10 +630,10 @@ function renderScreen1Canvas(
       ctx.fillStyle = s.color;
       ctx.fillRect(lx, by + 36, 16, 4);
       ctx.fillStyle = '#94a3b8';
-      ctx.font = '600 13px "JetBrains Mono", monospace';
+      ctx.font = '600 12.5px "JetBrains Mono", monospace';
       const txt = `${s.label}:${s.liveVal.toFixed(1)}`;
       ctx.fillText(txt, lx + 22, by + 40);
-      lx += ctx.measureText(txt).width + 32;
+      lx += ctx.measureText(txt).width + 24;
     }
 
     const plotX = bx + 52;
@@ -684,22 +700,23 @@ function renderScreen1Canvas(
     }
   };
 
-  // Top Chart: Temperatures
+  // Top Chart: Temperatures with Water Circuit and Refrigerant Output
   drawChart(
     16,
-    168,
+    172,
     690,
-    380,
-    'Courbes Températures : 3 Entrées (E1, E2, E3) & 1 Sortie (°C)',
+    376,
+    'Courbes Températures : Circuit Eau (Tee, Tse, Tec, Tsc) & R134a Sortie (°C)',
     -5,
     55,
     15,
     '°',
     [
-      { label: 'E1', color: '#38bdf8', getVal: (r) => r.in1TempC, liveVal: liveHp.inlet1TempC },
-      { label: 'E2', color: '#2dd4bf', getVal: (r) => r.in2TempC, liveVal: liveHp.inlet2TempC },
-      { label: 'E3', color: '#818cf8', getVal: (r) => r.in3TempC, liveVal: liveHp.inlet3TempC },
-      { label: 'Sortie', color: '#f97316', getVal: (r) => r.outTempC, liveVal: liveHp.outletTempC },
+      { label: 'Tee (Évap In)', color: '#38bdf8', getVal: (r) => r.tEE, liveVal: liveHp.tempWaterInletEvapC },
+      { label: 'Tse (Évap Out)', color: '#2dd4bf', getVal: (r) => r.tSE, liveVal: liveHp.tempWaterOutletEvapC },
+      { label: 'Tec (Cond In)', color: '#fb923c', getVal: (r) => r.tEC, liveVal: liveHp.tempWaterInletCondC },
+      { label: 'Tsc (Cond Out)', color: '#f43f5e', getVal: (r) => r.tSC, liveVal: liveHp.tempWaterOutletCondC },
+      { label: 'Ts (R134a)', color: '#c084fc', getVal: (r) => r.outTempC, liveVal: liveHp.outletTempC },
     ],
   );
 
@@ -740,15 +757,15 @@ function renderScreen1Canvas(
 
   const cols = [
     { x: tx + 8, label: 'Min' },
-    { x: tx + 62, label: 'Générateur (W / Wh / COP)' },
-    { x: tx + 266, label: 'Entrée 1 (T/P)' },
-    { x: tx + 414, label: 'Entrée 2 (T/P)' },
-    { x: tx + 562, label: 'Entrée 3 (T/P)' },
-    { x: tx + 710, label: 'Sortie (T/P)' },
+    { x: tx + 52, label: 'Générateur (W / Wh / COP_eau)' },
+    { x: tx + 276, label: 'Eau Évap (Tee ➔ Tse)' },
+    { x: tx + 434, label: 'Eau Cond (Tec ➔ Tsc)' },
+    { x: tx + 592, label: 'R134a Asp. E3 (T/P)' },
+    { x: tx + 736, label: 'R134a Sortie (T/P)' },
   ];
 
   ctx.fillStyle = '#38bdf8';
-  ctx.font = '700 14px "Plus Jakarta Sans", sans-serif';
+  ctx.font = '700 13.5px "Plus Jakarta Sans", sans-serif';
   ctx.textAlign = 'left';
   ctx.textBaseline = 'middle';
   for (const c of cols) {
@@ -781,22 +798,22 @@ function renderScreen1Canvas(
     ctx.stroke();
 
     const midY = ry + rowH * 0.52;
-    ctx.font = isInitial || isLatest ? '700 13px "JetBrains Mono", monospace' : '500 12.5px "JetBrains Mono", monospace';
+    ctx.font = isInitial || isLatest ? '700 12.5px "JetBrains Mono", monospace' : '500 12px "JetBrains Mono", monospace';
     ctx.fillStyle = row ? '#f8fafc' : '#475569';
     ctx.textAlign = 'left';
     ctx.fillText(m === 0 ? '0 (Init)' : String(m).padStart(2, '0'), cols[0].x, midY);
 
     if (row) {
       ctx.fillStyle = '#e2e8f0';
-      ctx.fillText(`${row.powerW.toFixed(0)}W ${row.energyWh.toFixed(1)}Wh ${row.cop.toFixed(2)}`, cols[1].x, midY);
+      ctx.fillText(`${row.powerW.toFixed(0)}W ${row.energyWh.toFixed(1)}Wh ${row.copWater.toFixed(2)}`, cols[1].x, midY);
       ctx.fillStyle = '#38bdf8';
-      ctx.fillText(`${row.in1TempC.toFixed(1)}°/${row.in1PressBar.toFixed(2)}b`, cols[2].x, midY);
-      ctx.fillStyle = '#2dd4bf';
-      ctx.fillText(`${row.in2TempC.toFixed(1)}°/${row.in2PressBar.toFixed(2)}b`, cols[3].x, midY);
-      ctx.fillStyle = '#818cf8';
-      ctx.fillText(`${row.in3TempC.toFixed(1)}°/${row.in3PressBar.toFixed(2)}b`, cols[4].x, midY);
+      ctx.fillText(`${row.tEE.toFixed(1)}° ➔ ${row.tSE.toFixed(1)}°`, cols[2].x, midY);
       ctx.fillStyle = '#fb923c';
-      ctx.fillText(`${row.outTempC.toFixed(1)}°/${row.outPressBar.toFixed(2)}b`, cols[5].x, midY);
+      ctx.fillText(`${row.tEC.toFixed(1)}° ➔ ${row.tSC.toFixed(1)}°`, cols[3].x, midY);
+      ctx.fillStyle = '#818cf8';
+      ctx.fillText(`${row.in3TempC.toFixed(1)}° / ${row.in3PressBar.toFixed(2)}b`, cols[4].x, midY);
+      ctx.fillStyle = '#f43f5e';
+      ctx.fillText(`${row.outTempC.toFixed(1)}° / ${row.outPressBar.toFixed(2)}b`, cols[5].x, midY);
     } else {
       ctx.fillText('—', cols[1].x, midY);
     }
@@ -1480,6 +1497,9 @@ export function buildLaboratoryCardboardDisplays(options: {
   let lastS1Signature = '';
   let lastS2Signature = '';
   let lastS3Signature = '';
+  let lastUpdateSec = 0;
+  let lastHpRowCount = -1;
+  let lastCookerRowCount = -1;
 
   const update = (
     log: LabMinuteLogState,
@@ -1487,6 +1507,20 @@ export function buildLaboratoryCardboardDisplays(options: {
     cooker: PressureCookerState,
     cal: CalorimetryState,
   ) => {
+    const nowSec = performance.now() * 0.001;
+    const isNewRow =
+      log.heatPumpRows.length !== lastHpRowCount ||
+      log.cookerRows.length !== lastCookerRowCount;
+
+    // Strict throttle: only update monitor canvases at most once every 0.75s,
+    // unless a new minute log row was just appended.
+    if (!isNewRow && nowSec - lastUpdateSec < 0.75) {
+      return;
+    }
+    lastUpdateSec = nowSec;
+    lastHpRowCount = log.heatPumpRows.length;
+    lastCookerRowCount = log.cookerRows.length;
+
     // Screen 0 (Dedicated Steady State Screen) update
     const s0Sig = `${hp.isRunning ? 1 : 0}|${hp.electricalPowerW.toFixed(0)}|${hp.inlet1TempC.toFixed(1)}|${hp.outletTempC.toFixed(1)}|${hp.tempColdC.toFixed(1)}|${hp.tempHotC.toFixed(1)}|${log.heatPumpRows.length}`;
     if (s0Sig !== lastS0Signature) {

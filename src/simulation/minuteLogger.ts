@@ -28,6 +28,12 @@ export interface HeatPumpMinuteRow {
   in3PressBar: number;
   outTempC: number;
   outPressBar: number;
+  /** Mesures de l'échange thermique avec l'eau (Cahier de laboratoire): */
+  tEE: number; // Température Entrée Eau Évaporateur (°C)
+  tSE: number; // Température Sortie Eau Évaporateur (°C)
+  tEC: number; // Température Entrée Eau Condenseur (°C)
+  tSC: number; // Température Sortie Eau Condenseur (°C)
+  copWater: number; // COP thermique calculé côté eau
 }
 
 export interface CookerMinuteRow {
@@ -74,6 +80,11 @@ export function snapshotHeatPumpRow(minute: number, hp: HeatPumpState): HeatPump
     in3PressBar: hp.inlet3PressBar,
     outTempC: hp.outletTempC,
     outPressBar: hp.outletPressBar,
+    tEE: hp.tempWaterInletEvapC,
+    tSE: hp.tempWaterOutletEvapC,
+    tEC: hp.tempWaterInletCondC,
+    tSC: hp.tempWaterOutletCondC,
+    copWater: hp.copWaterHeating,
   };
 }
 

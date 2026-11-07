@@ -69,7 +69,7 @@ export default function App() {
   const [openStation, setOpenStation] = useState<ActiveStation | null>(null);
   const [hoverKind, setHoverKind] = useState<'control' | 'table' | null>(null);
   const [isPointerLocked, setIsPointerLocked] = useState(false);
-  const [qualityLevel, setQualityLevel] = useState<QualityLevel>('high');
+  const [qualityLevel, setQualityLevel] = useState<QualityLevel>('medium');
 
   const handleSelectQuality = useCallback((level: QualityLevel) => {
     setQualityLevel(level);
@@ -433,6 +433,7 @@ export default function App() {
 
     const controller = new HeatPumpSceneController({
       container,
+      initialQualityLevel: 'medium',
       initialState: simStateRef.current,
       initialCookerState: cookerStateRef.current,
       initialCalorimetryState: calStateRef.current,

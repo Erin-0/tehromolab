@@ -67,3 +67,31 @@ test('Operating point defines 3 distinct input (T, P) pairs, 1 output (T, P) pai
   assert.ok(st.outletPressBar > st.inlet1PressBar, 'Output pressure exceeds all 3 input pressures');
 });
 
+test('Water exchanger temperatures Tee, Tse, Tec, Tsc and COP accurately reflect physical water circuit', () => {
+  const st = createInitialState(true);
+
+  // Evaporator water circuit: water enters at Tee and exits cooled at Tse
+  assert.ok(st.tempWaterInletEvapC > st.tempWaterOutletEvapC, 'Evaporator water outlet Tse must be colder than inlet Tee');
+  const deltaTe = st.tempWaterInletEvapC - st.tempWaterOutletEvapC;
+  assert.ok(deltaTe >= 1.0 && deltaTe <= 3.0, `Expected deltaTe ~1.8C, got ${deltaTe}`);
+  assert.ok(st.waterPowerEvapW > 200 && st.waterPowerEvapW < 500, `Expected waterPowerEvapW ~340W, got ${st.waterPowerEvapW}`);
+
+  // Condenser water circuit: water enters at Tec and exits heated at Tsc
+  assert.ok(st.tempWaterOutletCondC > st.tempWaterInletCondC, 'Condenser water outlet Tsc must be warmer than inlet Tec');
+  const deltaTc = st.tempWaterOutletCondC - st.tempWaterInletCondC;
+  assert.ok(deltaTc >= 1.5 && deltaTc <= 4.5, `Expected deltaTc ~2.9C, got ${deltaTc}`);
+  assert.ok(st.waterPowerCondW > 350 && st.waterPowerCondW < 700, `Expected waterPowerCondW ~480W, got ${st.waterPowerCondW}`);
+
+  // Water-side COP
+  assert.ok(st.copWaterHeating > 2.0 && st.copWaterHeating < 5.0, `Expected COP_eau ~3.3, got ${st.copWaterHeating}`);
+
+  // Stopped condition: temperatures equalize to bath temperatures
+  const stopped = computeOperatingPoint(st.tempColdC, st.tempHotC, st.valveOpening, false);
+  assert.equal(stopped.tempWaterInletEvapC, st.tempColdC);
+  assert.equal(stopped.tempWaterOutletEvapC, st.tempColdC);
+  assert.equal(stopped.tempWaterInletCondC, st.tempHotC);
+  assert.equal(stopped.tempWaterOutletCondC, st.tempHotC);
+  assert.equal(stopped.waterPowerEvapW, 0);
+  assert.equal(stopped.waterPowerCondW, 0);
+});
+

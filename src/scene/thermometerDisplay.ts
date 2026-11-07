@@ -31,12 +31,22 @@ export function createDynamicThermometerDisplay(options: {
   texture.anisotropy = maxAnisotropy;
 
   let lastKey = '';
+  let lastDrawTime = 0;
+  let lastTemp = initialTempC;
 
   const draw = (tempC: number) => {
+    const now = performance.now();
     const clamped = Math.max(minC, Math.min(maxC, tempC));
+    const delta = Math.abs(clamped - lastTemp);
+    // Throttle redrawing: at most 4 times/sec unless large temperature step
+    if (now - lastDrawTime < 250 && delta < 0.25) {
+      return;
+    }
     const key = clamped.toFixed(1);
-    if (key === lastKey) return;
+    if (key === lastKey && now - lastDrawTime < 1000) return;
     lastKey = key;
+    lastDrawTime = now;
+    lastTemp = clamped;
 
     ctx.clearRect(0, 0, 256, 512);
 

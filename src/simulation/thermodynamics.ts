@@ -39,6 +39,27 @@ export interface HeatPumpState {
   highPressureBar: number;
   /** Coefficient of Performance (heating): Qh_dot / P_el */
   copHeating: number;
+
+  /** Lab Notebook Water Measurements (Échange thermique avec l'eau): */
+  /** Température Entrée Eau Évaporateur Tee (°C) */
+  tempWaterInletEvapC: number;
+  /** Température Sortie Eau Évaporateur Tse (°C) */
+  tempWaterOutletEvapC: number;
+  /** Température Entrée Eau Condenseur Tec (°C) */
+  tempWaterInletCondC: number;
+  /** Température Sortie Eau Condenseur Tsc (°C) */
+  tempWaterOutletCondC: number;
+  /** Débit massique eau évaporateur m_dot_e (kg/s) */
+  waterFlowEvapKgS: number;
+  /** Débit massique eau condenseur m_dot_c (kg/s) */
+  waterFlowCondKgS: number;
+  /** Puissance thermique extraite à l'eau évaporateur Q_eau_k (W) */
+  waterPowerEvapW: number;
+  /** Puissance thermique transférée à l'eau condenseur Q_eau_h (W) */
+  waterPowerCondW: number;
+  /** COP thermique calculé côté eau (cahier de TP) : Q_eau_h / P_el */
+  copWaterHeating: number;
+
   /** Entrée 1: Post-expansion evaporator coil inlet temperature (°C) & pressure (bar) */
   inlet1TempC: number;
   inlet1PressBar: number;
@@ -69,7 +90,7 @@ export const DEFAULT_CONFIG: HeatPumpConfig = {
   waterMassKg: 4.0,
   waterSpecificHeatJPerKgK: 4184,
   ambientTempC: 20.5,
-  nominalPowerW: 124.0,
+  nominalPowerW: 144.0, // Matches 140W - 154W lab notebook operating range
 };
 
 /**
@@ -124,6 +145,15 @@ export function computeOperatingPoint(
       lowPressureBar: eqPressure,
       highPressureBar: eqPressure,
       copHeating: 0,
+      tempWaterInletEvapC: tempColdC,
+      tempWaterOutletEvapC: tempColdC,
+      tempWaterInletCondC: tempHotC,
+      tempWaterOutletCondC: tempHotC,
+      waterFlowEvapKgS: 0,
+      waterFlowCondKgS: 0,
+      waterPowerEvapW: 0,
+      waterPowerCondW: 0,
+      copWaterHeating: 0,
       inlet1TempC: tempColdC,
       inlet1PressBar: eqPressure,
       inlet2TempC: tempColdC,
@@ -167,6 +197,32 @@ export function computeOperatingPoint(
   const heatingPowerQhW = electricalPowerW * realCop;
   const coolingPowerQkW = Math.max(15.0, heatingPowerQhW - (electricalPowerW - shellLossW));
 
+  // Water circuit flows & thermal exchange (eau/eau didactic heat pump):
+  // Constant lab circulation flow rate: ~162 L/h (0.045 kg/s) on cold side, ~144 L/h (0.040 kg/s) on hot side
+  const waterFlowEvapKgS = 0.045;
+  const waterFlowCondKgS = 0.040;
+  const cpWater = config.waterSpecificHeatJPerKgK; // 4184 J/(kg*K)
+
+  const waterPowerEvapW = coolingPowerQkW * 0.96;
+  const waterPowerCondW = heatingPowerQhW * 0.96;
+
+  // Temperature drop across evaporator water circuit: ΔTe = Q_eau_k / (m_dot_e * cp)
+  const deltaTeK = waterPowerEvapW / (waterFlowEvapKgS * cpWater);
+  // Temperature rise across condenser water circuit: ΔTc = Q_eau_h / (m_dot_c * cp)
+  const deltaTcK = waterPowerCondW / (waterFlowCondKgS * cpWater);
+
+  // Water enters evaporator from the bath:
+  const tempWaterInletEvapC = tempColdC + 0.15;
+  // Water exits evaporator cooler than it entered:
+  const tempWaterOutletEvapC = tempWaterInletEvapC - deltaTeK;
+
+  // Water enters condenser from the bath:
+  const tempWaterInletCondC = tempHotC - 0.15;
+  // Water exits condenser hotter than it entered:
+  const tempWaterOutletCondC = tempWaterInletCondC + deltaTcK;
+
+  const copWaterHeating = waterPowerCondW / electricalPowerW;
+
   const lowPressureBar = r134aGaugePressureBar(evapSatC);
   const highPressureBar = Math.max(
     lowPressureBar + 1.5,
@@ -202,6 +258,15 @@ export function computeOperatingPoint(
     lowPressureBar,
     highPressureBar,
     copHeating: heatingPowerQhW / electricalPowerW,
+    tempWaterInletEvapC,
+    tempWaterOutletEvapC,
+    tempWaterInletCondC,
+    tempWaterOutletCondC,
+    waterFlowEvapKgS,
+    waterFlowCondKgS,
+    waterPowerEvapW,
+    waterPowerCondW,
+    copWaterHeating,
     inlet1TempC,
     inlet1PressBar,
     inlet2TempC,

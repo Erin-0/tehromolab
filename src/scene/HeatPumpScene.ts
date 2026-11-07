@@ -132,7 +132,8 @@ export class HeatPumpSceneController {
   private scene: THREE.Scene;
   private camera: THREE.PerspectiveCamera;
   private isSoftwareGl: boolean;
-  private qualityLevel: QualityLevel = 'high';
+  private qualityLevel: QualityLevel = 'medium';
+  private keyLight?: THREE.DirectionalLight;
 
   // First-person desktop-only camera state (no body, no hands)
   private playerCam: PlayerCameraState;
@@ -213,6 +214,7 @@ export class HeatPumpSceneController {
     onInteractAction: (action: SceneInteractiveAction) => void;
     onHoverChange?: (kind: 'control' | 'table' | null) => void;
     onPointerLockChange?: (locked: boolean) => void;
+    initialQualityLevel?: QualityLevel;
   }) {
     this.container = options.container;
     this.currentSimState = options.initialState;
@@ -223,6 +225,7 @@ export class HeatPumpSceneController {
     this.onInteractAction = options.onInteractAction;
     this.onHoverChange = options.onHoverChange;
     this.onPointerLockChange = options.onPointerLockChange;
+    this.qualityLevel = options.initialQualityLevel ?? 'medium';
 
     this.isSoftwareGl = detectSoftwareWebGL();
 
@@ -293,21 +296,21 @@ export class HeatPumpSceneController {
     this.scene.add(hemiLight);
 
     // Warm overhead studio laboratory key light covering Table 1, Table 2, and Table 3
-    const keyLight = new THREE.DirectionalLight(0xfff8ed, 1.65);
-    keyLight.position.set(8.2, 10.5, 9.5);
-    keyLight.target.position.set(6.0, 0.4, 3.5);
-    this.scene.add(keyLight.target);
-    keyLight.castShadow = !this.isSoftwareGl;
-    keyLight.shadow.mapSize.set(2048, 2048);
-    keyLight.shadow.camera.near = 1.0;
-    keyLight.shadow.camera.far = 65.0;
-    keyLight.shadow.camera.left = -22.0;
-    keyLight.shadow.camera.right = 28.0;
-    keyLight.shadow.camera.top = 24.0;
-    keyLight.shadow.camera.bottom = -24.0;
-    keyLight.shadow.bias = -0.0005;
-    keyLight.shadow.normalBias = 0.02;
-    this.scene.add(keyLight);
+    this.keyLight = new THREE.DirectionalLight(0xfff8ed, 1.65);
+    this.keyLight.position.set(8.2, 10.5, 9.5);
+    this.keyLight.target.position.set(6.0, 0.4, 3.5);
+    this.scene.add(this.keyLight.target);
+    this.keyLight.castShadow = !this.isSoftwareGl && this.qualityLevel !== 'low';
+    this.keyLight.shadow.mapSize.set(1024, 1024);
+    this.keyLight.shadow.camera.near = 1.0;
+    this.keyLight.shadow.camera.far = 65.0;
+    this.keyLight.shadow.camera.left = -22.0;
+    this.keyLight.shadow.camera.right = 28.0;
+    this.keyLight.shadow.camera.top = 24.0;
+    this.keyLight.shadow.camera.bottom = -24.0;
+    this.keyLight.shadow.bias = -0.0005;
+    this.keyLight.shadow.normalBias = 0.02;
+    this.scene.add(this.keyLight);
 
     // Soft left fill light so digital power meter and Qk bath never fall into harsh shadow
     const fillLight = new THREE.DirectionalLight(0xdceeff, 0.62);
@@ -1398,34 +1401,38 @@ export class HeatPumpSceneController {
     };
 
     if (side === 'cold') {
-      // Cold Bath Qk: 3 Inlet Temperature Sensors (E1, E2 water, E3 suction)
-      addPipeSleeveThermometer(leftPipeLocalX, 0.39, 'E1 · T2', -15, 45, (s) => s.inlet1TempC);
-      addPipeSleeveThermometer(rightPipeLocalX, -0.39, 'E3 · T1', -15, 45, (s) => s.inlet3TempC);
+      // Cold Circuit Water Measurements (Cahier de TP):
+      // Left sleeve: Tee (Température d'Entrée d'Eau à l'évaporateur)
+      addPipeSleeveThermometer(leftPipeLocalX, 0.39, 'Tee · Entrée', -5, 45, (s) => s.tempWaterInletEvapC);
+      // Right sleeve: Tse (Température de Sortie d'Eau de l'évaporateur)
+      addPipeSleeveThermometer(rightPipeLocalX, -0.39, 'Tse · Sortie', -5, 45, (s) => s.tempWaterOutletEvapC);
 
       const centerThermGroup = new THREE.Group();
       centerThermGroup.position.set(0.045, 0.62, 0.04);
       centerThermGroup.rotation.z = -0.045;
       centerThermGroup.add(
-        createReadableThermometer(0.52, true, 'E2 · Eau', -10, 50, (s) => s.inlet2TempC),
+        createReadableThermometer(0.52, true, 'Tk · Bac Qk', -5, 45, (s) => s.tempColdC),
       );
       bathGroup.add(centerThermGroup);
     } else {
-      // Hot Bath Qh: Outlet Discharge + Hot Water Bath + Condenser Subcooled Liquid
-      addPipeSleeveThermometer(leftPipeLocalX, 0.39, 'Sortie', 0, 70, (s) => s.outletTempC);
+      // Hot Circuit Water Measurements (Cahier de TP):
+      // Left sleeve: Tec (Température d'Entrée d'Eau au condenseur)
+      addPipeSleeveThermometer(leftPipeLocalX, 0.39, 'Tec · Entrée', 0, 70, (s) => s.tempWaterInletCondC);
+      // Right sleeve: Tsc (Température de Sortie d'Eau du condenseur)
       addPipeSleeveThermometer(
         rightPipeLocalX,
         -0.39,
-        'Liq. Qh',
+        'Tsc · Sortie',
         0,
-        60,
-        (s) => s.condenserLiquidTempC,
+        70,
+        (s) => s.tempWaterOutletCondC,
       );
 
       const centerThermGroup = new THREE.Group();
       centerThermGroup.position.set(0.045, 0.62, 0.04);
       centerThermGroup.rotation.z = -0.045;
       centerThermGroup.add(
-        createReadableThermometer(0.52, true, 'Qh · Eau', 0, 60, (s) => s.tempHotC),
+        createReadableThermometer(0.52, true, 'Th · Bac Qh', 0, 70, (s) => s.tempHotC),
       );
       bathGroup.add(centerThermGroup);
     }
@@ -2360,27 +2367,28 @@ export class HeatPumpSceneController {
     );
     this.powerRockerMat.emissiveIntensity = st.isRunning ? 0.95 : 0.12;
 
-    // 5. Gentle Water Surface Ripples in Both Baths
-    const amp = st.isRunning ? 0.005 : 0.0016;
-    for (const ws of this.waterSurfaces) {
-      const pos = ws.mesh.geometry.attributes.position as THREE.BufferAttribute;
-      const base = ws.basePositions;
-      const t = elapsedSec * 2.3 + ws.phaseOffset;
+    // 5. Gentle Water Surface Ripples in Both Baths (Skipped on Low to eliminate CPU overhead)
+    if (this.qualityLevel !== 'low') {
+      const amp = st.isRunning ? 0.005 : 0.0016;
+      for (const ws of this.waterSurfaces) {
+        const pos = ws.mesh.geometry.attributes.position as THREE.BufferAttribute;
+        const base = ws.basePositions;
+        const t = elapsedSec * 2.3 + ws.phaseOffset;
 
-      for (let i = 0; i < pos.count; i++) {
-        const bx = base[i * 3];
-        const bz = base[i * 3 + 2];
-        const r = Math.hypot(bx, bz);
-        const edgeFade = Math.max(0, 1 - Math.pow(r / 0.396, 3));
-        const ripple =
-          (Math.sin(r * 19.0 - t * 1.6) * 0.6 +
-            Math.cos(bx * 12.0 + bz * 10.0 + t * 1.15) * 0.4) *
-          amp *
-          edgeFade;
-        pos.setY(i, ripple);
+        for (let i = 0; i < pos.count; i++) {
+          const bx = base[i * 3];
+          const bz = base[i * 3 + 2];
+          const r = Math.hypot(bx, bz);
+          const edgeFade = Math.max(0, 1 - Math.pow(r / 0.396, 3));
+          const ripple =
+            (Math.sin(r * 19.0 - t * 1.6) * 0.6 +
+              Math.cos(bx * 12.0 + bz * 10.0 + t * 1.15) * 0.4) *
+            amp *
+            edgeFade;
+          pos.setY(i, ripple);
+        }
+        pos.needsUpdate = true;
       }
-      pos.needsUpdate = true;
-      ws.mesh.geometry.computeVertexNormals();
     }
 
     // 6. Update Table 2 Pressure Cooker, Table 3 Calorimetry, and 3 Black Floor Monitors
@@ -2450,8 +2458,7 @@ export class HeatPumpSceneController {
     const height = Math.max(1, this.container.clientHeight || window.innerHeight);
     this.camera.aspect = width / height;
     this.camera.updateProjectionMatrix();
-    this.renderer.setSize(width, height);
-    this.renderer.setPixelRatio(this.isSoftwareGl ? 1 : Math.min(window.devicePixelRatio, 2));
+    this.setQualityLevel(this.qualityLevel);
     this.renderer.render(this.scene, this.camera);
   };
 
@@ -2489,18 +2496,35 @@ export class HeatPumpSceneController {
     this.qualityLevel = level;
     switch (level) {
       case 'low':
-        this.renderer.setPixelRatio(1.0);
+        // Lightweight performance mode: 0.75x DPR, shadows completely disabled (0 shadow pass)
+        this.renderer.setPixelRatio(0.75);
         this.renderer.shadowMap.enabled = false;
+        this.renderer.shadowMap.autoUpdate = false;
+        if (this.keyLight) {
+          this.keyLight.castShadow = false;
+        }
         break;
       case 'medium':
-        this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.35));
+        // Balanced standard mode: 1.0x-1.15x DPR, 1024 PCF shadows
+        this.renderer.setPixelRatio(Math.min(window.devicePixelRatio * 0.85, 1.15));
         this.renderer.shadowMap.enabled = true;
         this.renderer.shadowMap.type = THREE.PCFShadowMap;
+        this.renderer.shadowMap.autoUpdate = true;
+        if (this.keyLight) {
+          this.keyLight.castShadow = true;
+          this.keyLight.shadow.mapSize.set(1024, 1024);
+        }
         break;
       case 'high':
-        this.renderer.setPixelRatio(this.isSoftwareGl ? 1 : Math.min(window.devicePixelRatio, 2.0));
+        // Crisp fidelity mode: capped at 1.4x DPR (eliminates 4K fillrate bottleneck on laptops)
+        this.renderer.setPixelRatio(this.isSoftwareGl ? 1.0 : Math.min(window.devicePixelRatio, 1.4));
         this.renderer.shadowMap.enabled = !this.isSoftwareGl;
         this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        this.renderer.shadowMap.autoUpdate = true;
+        if (this.keyLight) {
+          this.keyLight.castShadow = !this.isSoftwareGl;
+          this.keyLight.shadow.mapSize.set(1536, 1536);
+        }
         break;
     }
     const width = Math.max(1, this.container.clientWidth || window.innerWidth);
