@@ -286,15 +286,15 @@ export function computeOperatingPoint(
  * (so gauges and 7-segment power/energy displays show realistic lab values immediately).
  */
 export function createInitialState(
-  prewarmed = true,
+  running = false,
   config: HeatPumpConfig = DEFAULT_CONFIG,
 ): HeatPumpState {
-  if (!prewarmed) {
+  if (!running) {
     const op = computeOperatingPoint(
       config.ambientTempC,
       config.ambientTempC,
       0.75,
-      true,
+      false,
       config,
     );
     return {
@@ -302,7 +302,7 @@ export function createInitialState(
       elapsedSeconds: 0,
       energyWh: 0,
       meterHold: false,
-      heldPowerW: op.electricalPowerW,
+      heldPowerW: 0,
       heldEnergyWh: 0,
       meterUnit: 'Wh',
       meterRangeIndex: 1,

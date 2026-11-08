@@ -21,6 +21,7 @@ import {
   mechSin,
   cycleTARSLocomotionMode,
   setTARSLocomotionMode,
+  activateOrCycleTARS,
 } from '../simulation/tarsNavigation';
 
 export interface TARSBarRig {
@@ -37,6 +38,7 @@ export interface TARSRig {
   root: THREE.Group;
   bodyGroup: THREE.Group;
   bars: TARSBarRig[];
+  clickProxyMesh: THREE.Mesh;
   displayTex: THREE.CanvasTexture;
   displayCanvas: HTMLCanvasElement;
   displayCtx: CanvasRenderingContext2D;
@@ -278,6 +280,17 @@ export function buildTARS(
     });
   }
 
+  // Full-body invisible raycast click proxy (makes clicking anywhere on TARS effortless)
+  const proxyGeo = track(new THREE.BoxGeometry(2.1, 4.3, 1.3));
+  const proxyMat = track(
+    new THREE.MeshBasicMaterial({
+      visible: false,
+    }),
+  );
+  const clickProxyMesh = new THREE.Mesh(proxyGeo, proxyMat);
+  clickProxyMesh.position.y = PIVOT_Y;
+  bodyGroup.add(clickProxyMesh);
+
   root.add(bodyGroup);
   scene.add(root);
 
@@ -290,10 +303,10 @@ export function buildTARS(
   let lastScreenUpdate = 0;
 
   const cycleMode = (): TARSLocomotionMode => {
-    const nextMode = cycleTARSLocomotionMode(stateData);
+    const res = activateOrCycleTARS(stateData);
     renderTARSDisplay(displayCtx, stateData);
     displayTex.needsUpdate = true;
-    return nextMode;
+    return res.mode;
   };
 
   const setMode = (mode: TARSLocomotionMode): void => {
@@ -451,6 +464,7 @@ export function buildTARS(
     root,
     bodyGroup,
     bars,
+    clickProxyMesh,
     displayTex,
     displayCanvas,
     displayCtx,
@@ -477,16 +491,32 @@ function renderTARSDisplay(ctx: CanvasRenderingContext2D, data: TARSStateData): 
     ctx.fillRect(0, y, 256, 1.5);
   }
 
-  ctx.strokeStyle = '#10b981';
+  ctx.strokeStyle = data.isAwake ? '#10b981' : '#f59e0b';
   ctx.lineWidth = 2;
   ctx.strokeRect(4, 4, 248, 152);
 
-  ctx.fillStyle = '#34d399';
+  ctx.fillStyle = data.isAwake ? '#34d399' : '#fbbf24';
   ctx.font = '700 13px "Courier New", monospace';
   ctx.fillText('TARS // UNIT 02 [SILVER]', 12, 24);
 
   ctx.font = '600 11px "Courier New", monospace';
   ctx.fillStyle = '#a7f3d0';
+
+  if (!data.isAwake) {
+    ctx.fillStyle = '#fde68a';
+    ctx.fillText('STATUS : STANDBY [IMMOBILE]', 12, 44);
+    ctx.fillText('POWER  : DORMANT (WAITING)', 12, 62);
+    ctx.fillText('HONESTY: 90% | HUMOR: 75%', 12, 80);
+    ctx.fillStyle = '#38bdf8';
+    ctx.font = '700 11.5px "Courier New", monospace';
+    ctx.fillText('>> TOUCH / CLICK ROBOT <<', 12, 102);
+    ctx.fillText('>> TO START WALKING <<', 12, 118);
+    ctx.fillStyle = '#f59e0b';
+    ctx.font = '600 10px "Courier New", monospace';
+    ctx.fillText('[CLIQUEZ SUR LE ROBOT POUR ACTIVER]', 12, 136);
+    ctx.fillText('OR PRESS [G] ON KEYBOARD', 12, 149);
+    return;
+  }
 
   let modeLabel = '2-2 ROTARY WALK';
   if (data.gait === 'CRAWL_1_2_1') modeLabel = '1-2-1 CRAWL';
@@ -501,5 +531,5 @@ function renderTARSDisplay(ctx: CanvasRenderingContext2D, data: TARSStateData): 
   ctx.fillStyle = '#6ee7b7';
   ctx.font = '500 10px "Courier New", monospace';
   ctx.fillText('KEEP-OUT: SMART CIRCUIT [OK]', 12, 134);
-  ctx.fillText('PRESS [G] / CLICK TO TOGGLE', 12, 148);
+  ctx.fillText('PRESS [G] / CLICK TO CYCLE MODE', 12, 148);
 }

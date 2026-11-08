@@ -290,6 +290,7 @@ export function mechSin(phase: number): number {
 export interface TARSStateData {
   state: TARSState;
   gait: TARSGait;
+  isAwake: boolean; // Robot remains completely stationary until player clicks on it
   x: number;
   z: number;
   rotation: number;
@@ -331,12 +332,28 @@ export function cycleTARSLocomotionMode(state: TARSStateData): TARSLocomotionMod
   return nextMode;
 }
 
+/**
+ * Wakes up TARS if stationary, or cycles locomotion modes if already walking.
+ */
+export function activateOrCycleTARS(state: TARSStateData): { activated: boolean; mode: TARSLocomotionMode } {
+  if (!state.isAwake) {
+    state.isAwake = true;
+    state.state = 'WALKING';
+    state.walkPhase = 0;
+    state.spinAngle = 0;
+    return { activated: true, mode: state.gait as TARSLocomotionMode };
+  }
+  const nextMode = cycleTARSLocomotionMode(state);
+  return { activated: false, mode: nextMode };
+}
+
 export function createInitialTARSState(): TARSStateData {
   return {
-    state: 'WALKING',
+    isAwake: false, // Stationary until player clicks on the robot
+    state: 'IDLE',
     gait: 'WALK_2_2',
     x: 3.5,
-    z: 14.5, // Spawns in open South concourse, strictly avoiding tables
+    z: 14.5, // Spawns standing upright in open South concourse
     rotation: 0,
     targetX: 12.0,
     targetZ: 14.5,
@@ -366,6 +383,14 @@ export function stepTARSAI(
   if (dtSeconds <= 0) return prev;
 
   const next = { ...prev };
+
+  // Stationary gate: If player has not clicked TARS to wake it up, stay standing still in IDLE
+  if (!next.isAwake) {
+    next.state = 'IDLE';
+    next.walkPhase = 0;
+    next.spinAngle = 0;
+    return next;
+  }
 
   // Emergency safety check: if somehow inside table keepout zone, push away to South concourse
   if (isPointInsideKeepout(next.x, next.z, 0.4)) {

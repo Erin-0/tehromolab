@@ -27,8 +27,10 @@ test('heating on Stage 0, Stage 1, and Stage 2 regulates gauge pressure at each 
     let st: PressureCookerState = {
       ...createInitialCookerState(false),
       stage,
+      pluggedIn: true,
       heaterOn: true,
       heaterLevel: 6,
+      heaterPowerW: computeHeaterPowerW(true, 6),
     };
 
     for (let i = 0; i < 400; i++) {

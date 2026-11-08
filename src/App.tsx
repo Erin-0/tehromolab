@@ -5,6 +5,8 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { BottomControlDock } from './components/BottomControlDock';
+import { MobileDeviceGate } from './components/MobileDeviceGate';
+import { isMobilePhone } from './utils/deviceDetection';
 import {
   ActiveStation,
   HeatPumpSceneController,
@@ -49,9 +51,28 @@ export default function App() {
   const canvasMountRef = useRef<HTMLDivElement | null>(null);
   const sceneControllerRef = useRef<HeatPumpSceneController | null>(null);
 
-  // Mutable simulation states inside refs so 60Hz loop never tears down the WebGL canvas
-  const simStateRef = useRef<HeatPumpState>(createInitialState(true));
-  const cookerStateRef = useRef<PressureCookerState>(createInitialCookerState(true));
+  // Mobile phone gatekeeper: politely prompt phone visitors to use a computer
+  const [isMobileDevice, setIsMobileDevice] = useState<boolean>(() => isMobilePhone());
+  const [mobileBypassed, setMobileBypassed] = useState<boolean>(false);
+
+  useEffect(() => {
+    const checkDevice = () => {
+      setIsMobileDevice(isMobilePhone());
+    };
+    window.addEventListener('resize', checkDevice);
+    window.addEventListener('orientationchange', checkDevice);
+    return () => {
+      window.removeEventListener('resize', checkDevice);
+      window.removeEventListener('orientationchange', checkDevice);
+    };
+  }, []);
+
+  // Mutable simulation states: Table 1 (Heat Pump) and Table 2 (Pressure Cooker) start STOPPED as requested
+  // Table 1 starts stopped (compressor OFF, green switch OFF) - user starts it via the green button
+  // Table 2 starts stopped (cord unplugged, 0 W) - user starts it by plugging the cord into electricity
+  // Table 3 (Calorimetry) starts ready/active as requested
+  const simStateRef = useRef<HeatPumpState>(createInitialState(false));
+  const cookerStateRef = useRef<PressureCookerState>(createInitialCookerState(false));
   const calStateRef = useRef<CalorimetryState>(createInitialCalorimetryState(true));
   const minuteLogRef = useRef<LabMinuteLogState>(
     createInitialMinuteLogState(simStateRef.current, cookerStateRef.current),
@@ -69,7 +90,8 @@ export default function App() {
   const [openStation, setOpenStation] = useState<ActiveStation | null>(null);
   const [hoverKind, setHoverKind] = useState<'control' | 'table' | null>(null);
   const [isPointerLocked, setIsPointerLocked] = useState(false);
-  const [qualityLevel, setQualityLevel] = useState<QualityLevel>('medium');
+  const [qualityLevel, setQualityLevel] = useState<QualityLevel>('low'); // Default quality set to low as requested
+  const [isTARSAwake, setIsTARSAwake] = useState<boolean>(false);
 
   const handleSelectQuality = useCallback((level: QualityLevel) => {
     setQualityLevel(level);
@@ -422,18 +444,22 @@ export default function App() {
         break;
       case 'cycleTARSMode':
         sceneControllerRef.current?.cycleTARSMode();
+        setIsTARSAwake(sceneControllerRef.current?.isTARSAwake() ?? false);
         break;
     }
   };
 
   // Mount WebGLRenderer and 3D laboratory room once
   useEffect(() => {
+    // If user is accessing from mobile phone without bypass, do not mount WebGL to conserve battery/RAM
+    if (isMobileDevice && !mobileBypassed) return;
+
     const container = canvasMountRef.current;
     if (!container) return;
 
     const controller = new HeatPumpSceneController({
       container,
-      initialQualityLevel: 'medium',
+      initialQualityLevel: 'low',
       initialState: simStateRef.current,
       initialCookerState: cookerStateRef.current,
       initialCalorimetryState: calStateRef.current,
@@ -456,6 +482,7 @@ export default function App() {
           setHudState(nextHp);
           setCookerHudState(nextCooker);
           setCalHudState(nextCal);
+          setIsTARSAwake(controller.isTARSAwake());
         }
         return {
           heatPump: nextHp,
@@ -477,7 +504,12 @@ export default function App() {
       sceneControllerRef.current = null;
       controller.dispose();
     };
-  }, []);
+  }, [isMobileDevice, mobileBypassed]);
+
+  // Polite Mobile Gatekeeper screen if accessed from a smartphone
+  if (isMobileDevice && !mobileBypassed) {
+    return <MobileDeviceGate onBypass={() => setMobileBypassed(true)} />;
+  }
 
   return (
     <main className="relative h-screen w-screen overflow-hidden bg-[#dce8f4]">
@@ -501,12 +533,31 @@ export default function App() {
         }`}
       />
 
-      {/* Floating TARS Locomotion Guide Badge */}
+      {/* Floating TARS Locomotion Guide Badge (French ONLY) */}
       <div className="pointer-events-none fixed top-4 left-4 z-20 flex flex-col gap-1.5 text-xs text-slate-300">
-        <div className="flex items-center gap-2 rounded-lg border border-slate-700/60 bg-slate-900/80 px-3 py-1.5 shadow-lg backdrop-blur-xs">
-          <span className="h-2 w-2 rounded-full bg-cyan-400 shadow-sm shadow-cyan-400/50" aria-hidden="true" />
+        <div className="flex items-center gap-2 rounded-lg border border-slate-700/60 bg-slate-900/85 px-3 py-2 shadow-lg backdrop-blur-xs">
+          <span
+            className={`h-2.5 w-2.5 rounded-full ${
+              isTARSAwake
+                ? 'bg-emerald-400 shadow-sm shadow-emerald-400/60 animate-pulse'
+                : 'bg-amber-400 shadow-sm shadow-amber-400/60 animate-bounce'
+            }`}
+            aria-hidden="true"
+          />
           <span>
-            <strong className="font-semibold text-slate-100">TARS Robot</strong> · Appuyez sur <kbd className="rounded bg-slate-800 px-1.5 py-0.5 font-mono text-[11px] text-white">G</kbd> ou cliquez sur le robot pour changer de mode (2-2, 1-2-1, Spin)
+            <strong className="font-semibold text-slate-100">Robot TARS</strong> ·{' '}
+            {isTARSAwake ? (
+              <>
+                <span className="font-medium text-emerald-300">En déplacement</span> · Appuyez sur{' '}
+                <kbd className="rounded bg-slate-800 px-1.5 py-0.5 font-mono text-[11px] text-white">G</kbd>{' '}
+                ou cliquez sur le robot pour changer de mode (2-2 / 1-2-1 / Spin)
+              </>
+            ) : (
+              <>
+                <span className="font-semibold text-amber-300">En veille (Immobile)</span> ·{' '}
+                <span className="text-sky-300 underline underline-offset-2">Cliquez sur le robot pour lancer la marche</span> (ou touche G)
+              </>
+            )}
           </span>
         </div>
       </div>

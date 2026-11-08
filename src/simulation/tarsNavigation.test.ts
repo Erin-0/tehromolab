@@ -15,13 +15,48 @@ import {
   doesTrajectoryCrossTables,
   pickSmartNextTARSTarget,
   computeKeepoutRepulsion,
+  activateOrCycleTARS,
 } from './tarsNavigation';
 
-test('Initial TARS state spawns safely outside table keep-out zone', () => {
+test('Initial TARS state spawns safely outside table keep-out zone and starts stationary', () => {
   const tars = createInitialTARSState();
   assert.equal(isPointInsideKeepout(tars.x, tars.z, 0.2), false);
-  assert.equal(tars.state, 'WALKING');
+  assert.equal(tars.isAwake, false);
+  assert.equal(tars.state, 'IDLE');
   assert.equal(tars.gait, 'WALK_2_2');
+
+  // Verify it stays completely stationary before activation
+  const afterStep = stepTARSAI(tars, 2.0);
+  assert.equal(afterStep.x, tars.x);
+  assert.equal(afterStep.z, tars.z);
+  assert.equal(afterStep.state, 'IDLE');
+});
+
+test('activateOrCycleTARS wakes up stationary TARS and cycles modes on subsequent clicks', () => {
+  const tars = createInitialTARSState();
+  assert.equal(tars.isAwake, false);
+
+  // 1st click: wakes up
+  const res1 = activateOrCycleTARS(tars);
+  assert.equal(res1.activated, true);
+  assert.equal(res1.mode, 'WALK_2_2');
+  assert.equal(tars.isAwake, true);
+  assert.equal(tars.state, 'WALKING');
+
+  // 2nd click: cycles to CRAWL_1_2_1
+  const res2 = activateOrCycleTARS(tars);
+  assert.equal(res2.activated, false);
+  assert.equal(res2.mode, 'CRAWL_1_2_1');
+
+  // 3rd click: cycles to SPIN_WHEEL
+  const res3 = activateOrCycleTARS(tars);
+  assert.equal(res3.activated, false);
+  assert.equal(res3.mode, 'SPIN_WHEEL');
+
+  // 4th click: cycles back to WALK_2_2
+  const res4 = activateOrCycleTARS(tars);
+  assert.equal(res4.activated, false);
+  assert.equal(res4.mode, 'WALK_2_2');
 });
 
 test('TARS locomotion modes cycle cleanly between 2-2 Walk, 1-2-1 Crawl, and Pinwheel Spin', () => {
@@ -64,8 +99,10 @@ test('mechSin produces smooth symmetric cyclic oscillation with peak |1|', () =>
   assert.equal(Math.abs(mechSin(0.75) + 1.0) < 0.001, true);
 });
 
-test('stepTARSAI navigates and prevents wandering into table keep-out zone', () => {
+test('stepTARSAI navigates and prevents wandering into table keep-out zone when active', () => {
   let state = createInitialTARSState();
+  state.isAwake = true;
+  state.state = 'WALKING';
   // Simulate 30 seconds of autonomous wandering
   for (let step = 0; step < 600; step++) {
     state = stepTARSAI(state, 0.05);

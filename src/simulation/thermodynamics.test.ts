@@ -20,17 +20,26 @@ test('R134a saturation gauge pressure increases monotonically with temperature',
 });
 
 test('Running heat pump cools Qk bath, heats Qh bath, and accumulates Wh energy', () => {
-  const initial = createInitialState(false);
-  assert.equal(initial.energyWh, 0);
-  assert.equal(initial.tempColdC, DEFAULT_CONFIG.ambientTempC);
-  assert.equal(initial.tempHotC, DEFAULT_CONFIG.ambientTempC);
+  const initial = createInitialState(true);
+  assert.ok(initial.isRunning, 'Must be running');
+  assert.ok(initial.tempColdC <= 20.0);
+  assert.ok(initial.tempHotC >= 20.0);
 
   const after60s = stepHeatPumpState(initial, 60);
   assert.ok(after60s.tempColdC < initial.tempColdC, 'Left Qk bath must cool down');
   assert.ok(after60s.tempHotC > initial.tempHotC, 'Right Qh bath must heat up');
-  assert.ok(after60s.energyWh > 1.5, 'Energy meter in Wh must accumulate');
+  assert.ok(after60s.energyWh > initial.energyWh, 'Energy meter in Wh must accumulate');
   assert.ok(after60s.highPressureBar > after60s.lowPressureBar, 'Condenser pressure must exceed evaporator pressure');
   assert.ok(after60s.copHeating > 2.0 && after60s.copHeating < 5.5, 'COP must be in realistic lab range');
+});
+
+test('Stopped heat pump starts with 0 W electrical power and equalized pressures', () => {
+  const stopped = createInitialState(false);
+  assert.equal(stopped.isRunning, false);
+  assert.equal(stopped.electricalPowerW, 0);
+  assert.equal(stopped.energyWh, 0);
+  assert.equal(stopped.waterPowerEvapW, 0);
+  assert.equal(stopped.waterPowerCondW, 0);
 });
 
 test('Stopped compressor draws 0 W and equalizes pressures without advancing Wh', () => {

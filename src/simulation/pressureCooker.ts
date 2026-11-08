@@ -152,7 +152,7 @@ export function computeVesselGaugePressureBar(
  * and D-ring Dial at 5, at ~118.4 °C and ~0.88 bar gauge with 1140 mL of water.
  */
 export function createInitialCookerState(
-  prewarmed = true,
+  prewarmed = false,
   config: PressureCookerConfig = DEFAULT_COOKER_CONFIG,
 ): PressureCookerState {
   const capacityMl = 1500;
@@ -163,11 +163,11 @@ export function createInitialCookerState(
       waterTempC: config.ambientTempC,
       pressureBar: 0,
       stage: 2,
-      pluggedIn: true,
+      pluggedIn: false, // Cord unplugged by default; user connects cord to start heating
       pressureCutoutTripped: false,
       heaterOn: true,
       heaterLevel: 5,
-      heaterPowerW: computeHeaterPowerW(true, 5, config, true, false),
+      heaterPowerW: 0, // 0 W because disconnected from outlet
       steamVentRate: 0,
       waterVolumeMl: initWaterMl,
       waterCapacityMl: capacityMl,

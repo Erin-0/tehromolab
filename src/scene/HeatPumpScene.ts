@@ -132,7 +132,7 @@ export class HeatPumpSceneController {
   private scene: THREE.Scene;
   private camera: THREE.PerspectiveCamera;
   private isSoftwareGl: boolean;
-  private qualityLevel: QualityLevel = 'medium';
+  private qualityLevel: QualityLevel = 'low';
   private keyLight?: THREE.DirectionalLight;
 
   // First-person desktop-only camera state (no body, no hands)
@@ -225,7 +225,7 @@ export class HeatPumpSceneController {
     this.onInteractAction = options.onInteractAction;
     this.onHoverChange = options.onHoverChange;
     this.onPointerLockChange = options.onPointerLockChange;
-    this.qualityLevel = options.initialQualityLevel ?? 'medium';
+    this.qualityLevel = options.initialQualityLevel ?? 'low';
 
     this.isSoftwareGl = detectSoftwareWebGL();
 
@@ -744,6 +744,9 @@ export class HeatPumpSceneController {
 
     // 10. Autonomous Interstellar TARS Robot (roaming outer concourses, avoiding tables)
     this.tarsRig = buildTARS(this.scene, (res) => this.track(res), maxAniso);
+    if (this.tarsRig.clickProxyMesh) {
+      this.registerControlTarget(this.tarsRig.clickProxyMesh, { type: 'cycleTARSMode' });
+    }
     for (const bar of this.tarsRig.bars) {
       this.registerControlTarget(bar.upperMesh, { type: 'cycleTARSMode' });
       this.registerControlTarget(bar.lowerMesh, { type: 'cycleTARSMode' });
@@ -2490,6 +2493,10 @@ export class HeatPumpSceneController {
     if (this.tarsRig) {
       this.tarsRig.cycleMode();
     }
+  }
+
+  public isTARSAwake(): boolean {
+    return this.tarsRig?.stateData?.isAwake ?? false;
   }
 
   public setQualityLevel(level: QualityLevel): void {
